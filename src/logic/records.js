@@ -1,5 +1,6 @@
 // 记录数据层：框架无关，不碰 DOM。storage 可注入（浏览器传 localStorage，测试传内存对象）。
 // 数据契约与旧版 index.html 完全一致，重构后可直接读写同一份 localStorage 数据。
+// 本次重构启用 note 字段：表单可填、明细可看、JSON 备份完整保留；CSV 仍固定 6 列不动。
 import { calcDuration, fmtDur, todayStr } from './time.js';
 
 export const RECORDS_KEY = 'overtime_records_v1';
@@ -106,7 +107,20 @@ export function mergeImport(records, incoming) {
   return { records: next, added };
 }
 
-/** CSV 导出：表头/BOM/引号转义与旧版 exportCSV 一致 */
+/** 最近用过的工作内容（去重、按日期倒序），供表单 AutoComplete 做候选 */
+export function recentContents(records, limit = 8) {
+  const seen = new Set();
+  const out = [];
+  const sorted = records.slice().sort((a, b) => b.date.localeCompare(a.date));
+  for (const r of sorted) {
+    const c = String(r.content || '').trim();
+    if (c && !seen.has(c)) { seen.add(c); out.push(c); }
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** CSV 导出：表头/BOM/引号转义与旧版 exportCSV 一致（固定 6 列；备注走 JSON 备份） */
 export function toCSV(records) {
   const head = ['日期', '开始', '结束', '时长(小时)', '时长(时分)', '内容'];
   const rows = records.slice()

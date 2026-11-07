@@ -1,5 +1,5 @@
 // 逻辑层回归测试：node --test（见 package.json 的 npm test）
-// 断言值均来自旧版 index.html 的实际口径，改动前请先确认是否有意变更口径。
+// 断言值均来自旧版 index.html 的实际口径；标注「重构口径调整」的三处已获需求确认。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as L from '../index.js';
@@ -24,6 +24,15 @@ test('时间：时长计算、跨午夜、格式化', () => {
   assert.equal(L.fmtDate(new Date(2026, 10, 7)), '2026-11-07');
   assert.equal(L.fmtDate(L.weekStart(L.parseDate('2026-11-07'))), '2026-11-02'); // 周六 → 周一
   assert.equal(L.fmtDate(L.addDays(L.parseDate('2026-11-07'), 1)), '2026-11-08');
+});
+
+test('重构口径调整：fmtDur 不再出现「1小时60分」', () => {
+  assert.equal(L.fmtDur(1.999), '2小时');       // 旧版会输出 1小时60分
+  assert.equal(L.fmtDur(2.999), '3小时');
+  assert.equal(L.fmtDur(0.5), '30分');
+  assert.equal(L.fmtDur(-1.999), '-2小时');
+  assert.equal(L.fmtDur(4.25), '4小时15分');    // 日常分钟级显示不受影响
+  assert.equal(L.fmtDur(0.001), '0');           // 极小值兜底，不再返回空串
 });
 
 test('圆环几何：0 点在正上方、角度与大弧标志', () => {
@@ -51,6 +60,22 @@ test('记录：手动时长优先、校验、增删改撤销', () => {
   assert.equal(records.length, 0);
   assert.equal(removed.content, '改了');
   assert.equal(L.restoreAt(records, removed, index)[0].id, 'fixed');
+});
+
+test('重构口径调整：note 字段贯通与最近常用候选', () => {
+  const withNote = L.createRecord({ date: '2026-11-07', content: '值守', note: ' 带备注 ' }, () => 'n1');
+  assert.equal(withNote.note, ' 带备注 ');
+  assert.equal(L.normalizeRecord({ date: '2026-11-07', content: '旧数据' }).note, '');
+  const round = JSON.parse(L.toBackupJSON([withNote]));
+  assert.equal(round[0].note, ' 带备注 ');                 // JSON 备份完整保留备注
+  assert.equal(L.toCSV([withNote]).includes('带备注'), false); // CSV 固定 6 列不动
+
+  const recs = [
+    { id: '1', date: '2026-11-01', content: '旧活', note: '' },
+    { id: '2', date: '2026-11-07', content: '新活', note: '' },
+    { id: '3', date: '2026-11-08', content: '新活', note: '' }
+  ];
+  assert.deepEqual(L.recentContents(recs), ['新活', '旧活']); // 去重 + 按日期倒序
 });
 
 test('记录：存储读写、坏数据容错、导入去重、CSV', () => {
@@ -84,8 +109,12 @@ test('统计：周/月/年聚合与口径', () => {
   assert.equal(w.daysWith, 2);
   near(w.perDay, 1.75);
   near(L.monthSummary(recs, 2026, 11).total, 3.5);
-  near(L.yearSummary(recs, 2026).total, 3.5);
-  assert.equal(L.yearSummary(recs, 2026).months.length, 12);
+  const y = L.yearSummary(recs, 2026);
+  near(y.total, 3.5);
+  assert.equal(y.months.length, 12);
+  near(y.daysWith, 2);
+  near(y.daysRatio, 2 / 365 * 100);            // 重构口径调整：加班天数占比
+  assert.equal(y.attendanceRate, y.daysRatio); // 旧别名同值保留
   const ov = L.overview(recs, new Date(2026, 10, 7));
   near(ov.week, 3.5); near(ov.month, 3.5);
   const d = L.dayDetail([...recs, { id: 'c', date: '2026-11-07', duration: 0.5, content: '无时间', start: '', end: '' }], '2026-11-07');

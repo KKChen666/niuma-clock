@@ -57,7 +57,12 @@ export function yearSummary(records, year) {
   });
   const total = months.reduce((a, m) => a + m.value, 0);
   const daysWith = months.reduce((a, m) => a + m.days, 0);
-  return { year, months, total, daysWith, attendanceRate: daysWith / 365 * 100 };
+  const daysRatio = daysWith / 365 * 100;
+  return {
+    year, months, total, daysWith,
+    daysRatio,                    // 加班天数占比（旧版误称「出勤率」）
+    attendanceRate: daysRatio    // @deprecated 同值别名，避免外部旧调用断裂
+  };
 }
 
 /** 记录页顶部「本周 / 本月」两个数字 */

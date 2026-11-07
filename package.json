@@ -1,10 +1,24 @@
 {
   "name": "niuma-clock",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "加班时长统计工具 — Ant Design 5.x 重构版（逻辑层已就位，UI 待重建）",
+  "description": "加班时长统计工具 — Ant Design 5.x 重构版",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "node --test src/logic/__tests__/logic.test.mjs"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.2",
+    "antd": "^5.22.0",
+    "dayjs": "^1.11.13",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.0"
   }
 }
