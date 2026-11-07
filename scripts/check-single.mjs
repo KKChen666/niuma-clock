@@ -1,0 +1,118 @@
+/**
+ * 单文件离线版回归：确认「双击能开、数据能存」。
+ *
+ * 跑之前先 npm run build:single。
+ * 检查三件事：
+ *   1. dist-single/ 只有一个 HTML，且没有外部 src/href 引用
+ *   2. 用本机 Chrome 以 file:// 打开，React 真的挂载了（不是白屏）
+ *   3. file:// 下 localStorage 可读写（数据存得住）
+ *
+ * 找不到 Chrome 时跳过 2/3，只做静态检查并提示，不阻塞其他机器。
+ * 可用 CHROME_PATH 环境变量指定浏览器路径。
+ */
+import {
+  existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const outDir = join(root, 'dist-single');
+const smokeDir = join(root, '.workbuddy', 'smoke');
+const OUTPUT_NAME = '牛马时钟.html';
+
+let failures = 0;
+const check = (label, ok, detail = '') => {
+  console.log(`  ${ok ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`);
+  if (!ok) failures += 1;
+  return ok;
+};
+
+function findChrome() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+    'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser'
+  ].filter(Boolean);
+  return candidates.find(p => existsSync(p)) || null;
+}
+
+function chromeRun(chrome, profile, url, budget) {
+  return spawnSync(chrome, [
+    '--headless=new',
+    '--disable-gpu',
+    '--no-sandbox',
+    '--disable-extensions',
+    '--disable-background-networking',
+    `--user-data-dir=${profile}`,
+    `--virtual-time-budget=${budget}`,
+    '--dump-dom',
+    url
+  ], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, timeout: 120000 });
+}
+
+console.log('【单文件离线版检查】');
+
+// 1. 产物结构
+const htmlPath = join(outDir, OUTPUT_NAME);
+if (!check('产物存在', existsSync(htmlPath), `dist-single/${OUTPUT_NAME}`)) {
+  console.log('\nRESULT: FAIL ❌ — 请先跑 npm run build:single');
+  process.exit(1);
+}
+const files = readdirSync(outDir);
+check('目录里只有一个文件', files.length === 1, files.join(', '));
+const html = readFileSync(htmlPath, 'utf8');
+const external = [...html.matchAll(/<(?:script|link)[^>]*\b(?:src|href)="([^"]+)"/g)]
+  .map(m => m[1])
+  .filter(v => !v.startsWith('#') && !v.startsWith('data:'));
+check('无外部 JS/CSS 引用', external.length === 0, external.join(', ') || '全部内联');
+check('JS 与 CSS 均已内联', html.includes('<script type="module"') && html.includes('<style'));
+console.log(`  产物体积: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB`);
+
+// 2 & 3. 浏览器实测
+const chrome = findChrome();
+if (!chrome) {
+  console.log('\n  ⚠ 未找到 Chrome/Edge，跳过 file:// 实测（静态检查已完成）');
+  console.log('    可设置 CHROME_PATH 环境变量指向浏览器可执行文件');
+} else {
+  mkdirSync(smokeDir, { recursive: true });
+  const profile = join(smokeDir, 'check-profile');
+  rmSync(profile, { recursive: true, force: true });
+  const url = pathToFileURL(htmlPath).href;
+
+  const app = chromeRun(chrome, profile, url, 12000);
+  const dom = app.stdout || '';
+  check('file:// 能打开且 React 已挂载', dom.length > 100000 && dom.includes('<div id="root">') && !/<div id="root">\s*<\/div>/.test(dom), `${(dom.length / 1024).toFixed(0)} KB DOM`);
+  check('月历 / 导航 / 统计卡都在', ['ant-picker-calendar', 'ant-segmented', 'ant-statistic'].every(k => dom.includes(k)));
+  const fatal = (app.stderr || '').split('\n').filter(l => /Uncaught|SecurityError|SyntaxError/i.test(l));
+  check('无致命脚本错误', fatal.length === 0, fatal.slice(0, 2).join(' | '));
+
+  // file:// 下 localStorage 写读探针
+  const probePath = join(outDir, '__probe.html');
+  writeFileSync(probePath, `<!doctype html><html><body><div id="r">PENDING</div><script>
+try {
+  localStorage.setItem('__niuma_probe__','ok');
+  var v = localStorage.getItem('__niuma_probe__');
+  localStorage.removeItem('__niuma_probe__');
+  document.getElementById('r').textContent = 'OK:' + v;
+} catch (e) {
+  document.getElementById('r').textContent = 'FAIL:' + e.name;
+}
+</script></body></html>`, 'utf8');
+  const probe = chromeRun(chrome, join(smokeDir, 'check-profile-probe'), pathToFileURL(probePath).href, 3000);
+  const probeDom = probe.stdout || '';
+  check('file:// 下 localStorage 可读写', /<div id="r">OK:ok<\/div>/.test(probeDom),
+    /<div id="r">([^<]*)<\/div>/.exec(probeDom)?.[1] || '无输出');
+  rmSync(probePath, { force: true });
+  rmSync(join(smokeDir, 'check-profile-probe'), { recursive: true, force: true });
+}
+
+console.log(`\nRESULT: ${failures === 0 ? 'PASS ✅' : `FAIL ❌ (${failures} 项)`}`);
+process.exit(failures === 0 ? 0 : 1);
