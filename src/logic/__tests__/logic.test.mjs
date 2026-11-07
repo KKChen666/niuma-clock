@@ -35,6 +35,22 @@ test('重构口径调整：fmtDur 不再出现「1小时60分」', () => {
   assert.equal(L.fmtDur(0.001), '0');           // 极小值兜底，不再返回空串
 });
 
+test('月历网格：周一为首、按实际周数、不硬凑 6 行', () => {
+  const oct = L.monthGrid(2026, 10);
+  assert.equal(oct.length, 35);              // 2026-10 只需 5 行
+  assert.equal(oct[0], '2026-09-28');        // 周一起
+  assert.equal(oct[3], '2026-10-01');
+  assert.equal(oct[34], '2026-11-01');
+  const nov = L.monthGrid(2026, 11);
+  assert.equal(nov.length, 42);              // 2026-11 需要 6 行
+  assert.equal(nov[0], '2026-10-26');
+  assert.equal(nov[41], '2026-12-06');
+  const feb = L.monthGrid(2024, 2);
+  assert.equal(feb.length, 35);              // 闰年 2 月
+  assert.equal(feb[0], '2024-01-29');
+  assert.equal(feb[4], '2024-02-02');
+});
+
 test('圆环几何：0 点在正上方、角度与大弧标志', () => {
   const [x, y] = L.polar(140, 140, 104, 0);
   near(x, 140); near(y, 36);

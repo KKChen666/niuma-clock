@@ -18,7 +18,7 @@ export function lunarOf(dateStr) {
 
 export function useCalendar(records) {
   // 一个 selectedDate 同时驱动「显示月份」和「选中日」：
-  // Calendar 的 value 就是它，切月时把选中日挪到该月 1 号即可。
+  // 月历 grid 由它的月份生成，切月时保留原来的「日」（超出的日子取当月最后一天）。
   const [selectedDate, setSelectedDate] = useState(() => todayStr());
   const cursor = useMemo(() => dayjs(selectedDate), [selectedDate]);
 
@@ -34,7 +34,11 @@ export function useCalendar(records) {
     setSelectedDate(typeof d === 'string' ? d : d.format('YYYY-MM-DD'));
   }, []);
   const selectMonth = useCallback((d) => {
-    if (d) setSelectedDate(d.startOf('month').format('YYYY-MM-DD'));
+    if (!d) return;
+    setSelectedDate(prev => {
+      const day = Math.min(dayjs(prev).date(), d.daysInMonth());
+      return d.date(day).format('YYYY-MM-DD');
+    });
   }, []);
   const goToday = useCallback(() => setSelectedDate(todayStr()), []);
 

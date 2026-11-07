@@ -44,7 +44,7 @@ npm run preview      # 预览构建产物
     ├── context.js                 全局状态出口
     ├── styles.css                 移动优先样式（375px 无横向溢出）
     ├── logic/                     纯函数逻辑层（零依赖，npm test 覆盖）
-    │   ├── time.js  lunar.js  ring.js
+    │   ├── time.js  lunar.js  ring.js  calendar.js
     │   ├── records.js  stats.js  timer.js
     │   ├── index.js               统一出口，React 层只从这里 import
     │   └── __tests__/logic.test.mjs
@@ -87,6 +87,7 @@ npm run preview      # 预览构建产物
 - 单次计时超过 24 小时仍会绕回（`HH:mm` 没有日期），旧版就有的限制，没改数据契约。
 - 起止与手动时长用 `Segmented` 单一 mode 互斥，不再是旧版两个 input 互相清空的事件链。
 - antd 5 全量引入，生产 JS 约 1.2MB（gzip 388KB）。本地工具够用，要瘦身可做代码分割。
+- 月历是自绘 CSS Grid，不是 antd `Calendar`：5.x 的 `cellRender` 会叠加默认日期数字，实测会糊成一团（见 `docs/02` 第 16 条）。
 - 浏览器交互（计时刷新连续性、375px 真机、旧版 JSON 逐项对齐）还没跑真机，见 `docs/01` 验收清单。
 
 ## 分支
