@@ -1,0 +1,10 @@
+{
+  "name": "niuma-clock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "加班时长统计工具 — Ant Design 5.x 重构版（逻辑层已就位，UI 待重建）",
+  "scripts": {
+    "test": "node --test src/logic/__tests__/logic.test.mjs"
+  }
+}

@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>加班记录 · 极简本地版</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#1f2430; --sub:#8a93a3; --line:#eef0f3;
+    --primary:#2f6df6; --primary-soft:#eaf1ff; --amber:#f5a623; --danger:#ef5350;
+    --shadow:0 1px 3px rgba(20,30,50,.05),0 4px 16px rgba(20,30,50,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;-webkit-font-smoothing:antialiased;padding-bottom:68px}
+  header{position:sticky;top:0;z-index:10;background:rgba(246,247,249,.92);backdrop-filter:blur(8px);
+    padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between}
+  header .brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800}
+  header .brand .logo{width:26px;height:26px;border-radius:8px;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:15px}
+  main{max-width:680px;margin:0 auto;padding:8px 16px 16px}
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+  .tab{display:none}
+  .tab.active{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* 大圆环 */
+  .ring-card{display:flex;flex-direction:column;align-items:center;padding:22px 18px}
+  .ring-wrap{width:260px;max-width:78vw;margin:0 auto}
+  .ring-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:10px}
+  .ring-mini .rm{background:#f6f8fc;border-radius:12px;padding:13px 10px;text-align:center}
+  .ring-mini .rm .n{font-size:21px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .ring-mini .rm .n small{font-size:11px;color:var(--sub);font-weight:700;margin-left:2px}
+  .ring-mini .rm .l{font-size:11.5px;color:var(--sub);margin-top:3px;font-weight:600}
+  .ring-mini .rm.am .n{color:var(--amber)}
+
+  /* 手机月历 */
+  .cal-head{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:2px}
+  .cal-title{border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 14px;border-radius:12px;transition:.12s}
+  .cal-title:hover{background:#eef3ff}
+  .cal-title .ct-main{font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:6px}
+  .cal-title .chev{font-size:11px;color:var(--sub)}
+  .cal-lunar{text-align:center;font-size:12px;color:var(--sub);font-weight:600}
+  .cal-lunar b{color:var(--ink);font-weight:700}
+  .cal-mask{position:fixed;inset:0;background:rgba(20,30,50,.32);z-index:40;opacity:0;pointer-events:none;transition:opacity .22s}
+  .cal-mask.show{opacity:1;pointer-events:auto}
+  .cal-picker{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);z-index:50;background:#fff;
+    border-radius:20px;box-shadow:0 12px 48px rgba(20,30,50,.28);padding:20px;width:min(384px,92vw);
+    opacity:0;visibility:hidden;transition:opacity .22s,transform .22s,visibility .22s}
+  .cal-picker.open{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+  /* 录入区日期块（上下布局） */
+  .rec-h{font-size:15px;font-weight:800;margin:0 0 13px}
+  .date-block{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px 15px;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;transition:.15s;margin-bottom:16px;text-align:left;font-family:inherit}
+  .date-block:hover{border-color:var(--primary);background:#f8faff;box-shadow:0 2px 10px rgba(47,109,246,.08)}
+  .date-block:active{transform:scale(.99)}
+  .db-left{display:flex;align-items:center;gap:11px}
+  .db-cal{width:36px;height:36px;border-radius:10px;background:var(--primary-soft);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .db-text{display:flex;flex-direction:column;gap:2px}
+  .db-main{font-size:15px;font-weight:800;color:var(--ink)}
+  .db-lunar{font-size:11.5px;color:var(--sub);font-weight:600}
+  .date-block .chev{font-size:11px;color:var(--sub);transition:.2s}
+  .date-block:hover .chev{color:var(--primary)}
+  .cp-top{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
+  .cp-top .ybtn{border:1px solid var(--line);background:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--sub);font-weight:800}
+  .cp-top .ybtn:hover{border-color:var(--primary);color:var(--primary)}
+  .cp-top .ybtn:active{transform:scale(.92)}
+  .cp-drill{border:none;background:none;cursor:pointer;font-size:16px;font-weight:800;color:var(--primary);
+    display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:10px;transition:.12s;min-width:98px;justify-content:center}
+  .cp-drill:hover{background:var(--primary-soft)}
+  .cp-drill:active{transform:scale(.96)}
+  .cp-drill .dchev{font-size:11px;opacity:.85}
+  .cp-hint{text-align:center;font-size:11px;color:var(--sub);font-weight:600;margin:2px 0 12px}
+  .cp-months{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px}
+  .cp-months button{position:relative;border:none;background:none;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;
+    width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;transition:.12s}
+  .cp-months button:hover{background:var(--primary-soft);color:var(--primary)}
+  .cp-months button.on{background:var(--primary);color:#fff;box-shadow:0 3px 8px rgba(47,109,246,.3)}
+  .cp-months button.has::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--primary)}
+  .cp-months button.on.has::after{background:#fff}
+  .cp-years{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 6px;margin-bottom:4px}
+  .cp-years button{position:relative;border:none;background:none;font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;
+    height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:.12s}
+  .cp-years button:hover{background:var(--primary-soft);color:var(--primary)}
+  .cp-years button.on{background:var(--primary);color:#fff;box-shadow:0 3px 8px rgba(47,109,246,.3)}
+  .cp-years button.dim{color:#c8cdd6}
+  .cp-years button.dim:hover{background:none;color:#c8cdd6}
+  .cp-years button.has::after{content:'';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--primary)}
+  .cp-years button.on.has::after{background:#fff}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal .ch{text-align:center;font-size:11px;color:var(--sub);font-weight:800;padding:4px 0 6px}
+  .cal .cd{position:relative;aspect-ratio:1/1;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:14px;font-weight:800;color:var(--ink);cursor:pointer;background:#fafbfc;transition:.12s}
+  .cal .cd:hover{background:#eef3ff}
+  .cal .cd .sub{font-size:9px;font-weight:800;margin-top:1px;color:inherit;opacity:.9}
+  .cal .cd .dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px rgba(255,255,255,.6)}
+  .cal .cd.out{background:transparent;color:#c8cdd6;cursor:default}
+  .cal .cd.out:hover{background:transparent}
+  .cal .cd.today{background:var(--primary);color:#fff;box-shadow:0 4px 10px rgba(47,109,246,.35)}
+  .cal .cd.today .sub{color:#dbe7ff}
+  .cal .cd.sel{outline:2px solid var(--amber);outline-offset:-2px}
+  .cal-legend{font-size:11px;color:var(--sub);margin-top:12px;text-align:center;line-height:1.6}
+
+  /* 录入 */
+  label.fld{display:block;font-size:12px;color:var(--sub);font-weight:700;margin:0 0 6px}
+  /* ===== 起止时间：借鉴 Ant Design 5 TimePicker / RangePicker 的 UI =====
+   * 参考点：prefix / suffix 图标、RangePicker 整体聚焦高亮、下拉时分面板、
+   *        defaultOpenValue（本工具改为默认定位「此刻」，更贴加班场景）。
+   * 纯原生实现，不引入 React / antd / dayjs；仍保留 <input type=time> 供键盘直接输入。
+   */
+  .tp-range{position:relative;display:flex;align-items:center;width:100%;
+    border:1.5px solid var(--line);border-radius:13px;background:#fff;transition:.15s}
+  .tp-range:hover{border-color:#c3d4f7}
+  .tp-range:focus-within,.tp-range.open{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .tp-prefix,.tp-suffix{flex:none;align-self:stretch;display:flex;align-items:center;justify-content:center;
+    width:34px;color:#aab1bd}
+  .tp-suffix{border:none;background:none;cursor:pointer;border-radius:0 12px 12px 0;transition:.15s}
+  .tp-suffix:hover,.tp-range.open .tp-suffix{color:var(--primary);background:var(--primary-soft)}
+  .tp-sep{flex:none;color:var(--sub);font-weight:700;font-size:13px;padding:0 4px}
+  .tp-field{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center}
+  .tp-range .tp-input,.tp-range .tp-input:focus{
+    -webkit-appearance:none;appearance:none;width:100%;min-width:0;border:none;background:transparent;
+    box-shadow:none;outline:none;padding:12px 2px;font-size:15px;font-weight:700;color:var(--ink);
+    text-align:center;font-variant-numeric:tabular-nums;cursor:pointer}
+  .tp-range .tp-input::-webkit-calendar-picker-indicator{display:none}
+  .tp-range .tp-input::placeholder{color:#b6bcc7;font-weight:600}
+  .tp-clear{position:absolute;right:1px;top:50%;transform:translateY(-50%);width:18px;height:18px;
+    border:none;border-radius:50%;background:#e9edf3;color:#98a1b0;font-size:12px;line-height:1;
+    cursor:pointer;opacity:0;transition:.12s;padding:0}
+  .tp-field:hover .tp-clear{opacity:1}
+  .tp-clear:hover{background:#ffe3e3;color:var(--danger)}
+  /* 下拉面板：两列滚动 + 顶部开始/结束切换 + 底部此刻/确定 */
+  .tp-panel{position:absolute;top:calc(100% + 8px);left:0;width:100%;min-width:270px;z-index:30;
+    background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    box-shadow:0 8px 28px rgba(20,30,50,.14);animation:tpIn .16s cubic-bezier(.22,1,.36,1)}
+  .tp-panel[hidden]{display:none}
+  @keyframes tpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .tp-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px}
+  .tp-panel-head>span{font-size:12px;color:var(--sub);font-weight:700}
+  .tp-switch{display:flex;background:#f1f3f6;border-radius:8px;padding:2px}
+  .tp-tab{border:none;background:none;border-radius:6px;padding:4px 11px;font-size:11.5px;
+    font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit}
+  .tp-tab.active{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(20,30,50,.1)}
+  .tp-col-head{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);
+    background:#fafbfd;font-size:11px;color:var(--sub);font-weight:700;text-align:center;padding:5px 0}
+  .tp-col-head span+span{border-left:1px solid var(--line)}
+  .tp-cols{display:grid;grid-template-columns:1fr 1fr;height:176px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .tp-col{position:relative;overflow-y:auto;scrollbar-width:thin;padding:6px 0}
+  .tp-col+.tp-col{border-left:1px solid var(--line)}
+  .tp-cell{padding:7px 0;text-align:center;font-size:13.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;font-variant-numeric:tabular-nums;user-select:none}
+  .tp-cell:hover{background:var(--primary-soft);color:var(--primary)}
+  .tp-cell.selected{background:var(--primary);color:#fff;font-weight:800}
+  .tp-panel-foot{display:flex;align-items:center;justify-content:space-between;padding:9px 12px}
+  .tp-link{border:none;background:none;color:var(--primary);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .tp-ok{border:none;background:var(--primary);color:#fff;border-radius:8px;padding:6px 15px;
+    font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .tp-ok:active{transform:scale(.96)}
+  .dur-row input[type=number]{
+    -webkit-appearance:none;appearance:none;text-align:center;font-variant-numeric:tabular-nums;
+    border:1.5px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);
+    padding:12px 10px;font-size:15px;font-weight:700;transition:.15s;cursor:pointer}
+  .dur-row input[type=number]:focus{
+    outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px var(--primary-soft)}
+  .dur-row{display:flex;flex-direction:column;gap:9px;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;color:var(--sub);cursor:pointer;font-family:inherit;transition:.12s}
+  .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+  .chip:active{transform:scale(.95)}
+  .rec-actions{display:flex;gap:10px;margin-top:14px}
+  .rec-actions .btn{flex:1}
+  input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;font-size:14.5px;
+    font-family:inherit;background:#fbfcfe;color:var(--ink);transition:.15s}
+  input:focus,textarea:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px var(--primary-soft)}
+  input::placeholder,textarea::placeholder{color:#b6bcc7}
+  .btn{border:none;border-radius:11px;padding:11px 20px;font-size:14.5px;font-weight:700;cursor:pointer}
+  .btn.solid{background:var(--primary);color:#fff}
+  .btn.solid:active{transform:scale(.97)}
+  .btn.ghost{background:#f1f3f6;color:var(--ink);transition:transform .18s cubic-bezier(.22,1,.36,1),background .18s}
+  .btn.ghost:active{transform:scale(.96)}
+  .calc{font-size:12.5px;color:var(--primary);font-weight:700;margin-top:9px;min-height:16px}
+
+  /* ===== LeiBox · Tactile Push Button（vanilla 源码接入）=====
+   * 来源：https://leibox.pantoria.cn/docs/animations/tactile-push-button
+   * 原作：少荃（Douyin: 宝龙体育优品小铺），LeiBox 社区投稿
+   * 改编：剥离演示页 body 布局与 Inter 外链字体，配色变量改为本工具主色，
+   *       字号/圆角/尺寸适配移动端；保留原组件「外层投影下沉 + 内层内缩」双层按压结构。
+   */
+  .btn.tactile{
+    --button-font-size:14.5px;
+    --button-padding-x:1.2em;
+    --button-padding-y:.78em;
+    --button-surface-start:#5185ff;
+    --button-surface-end:#2f6df6;
+    --button-text-start:#ffffff;
+    --button-text-end:#e8f0ff;
+    --button-press-scale:.955;
+    --button-hover-text-scale:.985;
+    --button-motion-speed:1.35;
+    all:unset;
+    box-sizing:border-box;
+    display:block;
+    width:100%;
+    font-size:var(--button-font-size);
+    font-family:inherit;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    position:relative;
+    border-radius:13px;
+    background-color:#1d3c96;
+    box-shadow:0 2px 0 rgba(24,54,140,.9),0 5px 12px rgba(47,109,246,.28);
+    transition:box-shadow .22s ease;
+  }
+  .btn.tactile::after{
+    pointer-events:none;content:"";position:absolute;z-index:0;
+    width:calc(100% + .2em);height:calc(100% + .2em);top:-.1em;left:-.1em;
+    border-radius:inherit;
+    background:linear-gradient(-135deg,rgba(16,40,120,.45),transparent 45%);
+    opacity:.35;mix-blend-mode:multiply;
+  }
+  .btn.tactile .button-outer{
+    display:block;position:relative;z-index:1;border-radius:inherit;
+    transition:box-shadow calc(300ms / clamp(0.25,var(--button-motion-speed),3)) ease;
+    box-shadow:0 .05em .05em -.01em rgba(24,54,140,.9),0 .01em .01em -.01em rgba(24,54,140,.5),
+      .15em .3em .1em -.01em rgba(24,54,140,.3);
+  }
+  .btn.tactile:hover .button-outer{
+    box-shadow:0 0 0 0 rgba(24,54,140,.9),0 0 0 0 rgba(24,54,140,.5),0 0 0 0 rgba(24,54,140,.3);
+  }
+  .btn.tactile .button-inner{
+    display:block;position:relative;z-index:1;border-radius:inherit;
+    padding:var(--button-padding-y) var(--button-padding-x);
+    background-image:linear-gradient(135deg,var(--button-surface-start),var(--button-surface-end));
+    transition:box-shadow calc(300ms / clamp(0.25,var(--button-motion-speed),3)) ease,
+      clip-path calc(250ms / clamp(0.25,var(--button-motion-speed),3)) ease,
+      transform calc(250ms / clamp(0.25,var(--button-motion-speed),3)) ease;
+    overflow:clip;clip-path:inset(0 0 0 0 round 13px);
+    box-shadow:0 0 0 0 inset rgba(12,36,110,.12),
+      -.05em -.05em .05em 0 inset rgba(12,36,110,.28),
+      0 0 0 0 inset rgba(12,36,110,.12),
+      0 0 .05em .2em inset rgba(255,255,255,.22),
+      .025em .05em .1em 0 inset rgba(255,255,255,.85),
+      .12em .12em .12em inset rgba(255,255,255,.22),
+      -.075em -.25em .25em .1em inset rgba(12,36,110,.22);
+  }
+  .btn.tactile:hover .button-inner{
+    clip-path:inset(1px 1px 1px 1px round 13px);
+    box-shadow:.1em .15em .05em 0 inset rgba(12,36,110,.45),
+      -.025em -.03em .05em .025em inset rgba(12,36,110,.35),
+      .25em .25em .2em 0 inset rgba(12,36,110,.3),
+      0 0 .05em .5em inset rgba(255,255,255,.12),
+      0 0 0 0 inset rgba(255,255,255,.85),
+      .12em .12em .12em inset rgba(255,255,255,.22),
+      -.075em -.12em .2em .1em inset rgba(12,36,110,.22);
+  }
+  .btn.tactile .button-inner span{
+    display:block;white-space:pre-wrap;text-align:center;position:relative;z-index:4;
+    font-family:inherit;letter-spacing:0;font-weight:800;
+    color:transparent;
+    background-image:linear-gradient(135deg,var(--button-text-start),var(--button-text-end));
+    -webkit-background-clip:text;background-clip:text;
+    transition:transform calc(250ms / clamp(0.25,var(--button-motion-speed),3)) ease;
+    user-select:none;
+  }
+  .btn.tactile:hover .button-inner span{transform:scale(var(--button-hover-text-scale))}
+  .btn.tactile:active .button-inner{transform:scale(var(--button-press-scale))}
+  .btn.tactile.solid:active{transform:none;box-shadow:0 1px 0 rgba(24,54,140,.9),0 2px 6px rgba(47,109,246,.2)}
+  .btn.tactile:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+
+  /* ===== 实时计时（番茄钟式）===== */
+  .timer-zone{width:100%;margin-top:13px;display:flex;flex-direction:column;align-items:center;gap:11px}
+  .timer-status{display:flex;align-items:center;justify-content:center;gap:7px;min-height:18px;
+    font-size:12px;font-weight:700;color:var(--sub);text-align:center;line-height:1.5}
+  .timer-status .ts-dot{width:7px;height:7px;border-radius:50%;background:#cfd5df;flex:none}
+  .timer-zone.running .timer-status{color:#d98200}
+  .timer-zone.running .ts-dot{background:var(--amber);box-shadow:0 0 0 3px rgba(245,166,35,.18);
+    animation:tmrBlink 1.4s ease-in-out infinite}
+  @keyframes tmrBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.72)}}
+  .timer-actions{display:flex;gap:10px;width:100%;max-width:340px}
+  .timer-actions>.btn{flex:1 1 0;min-width:0;width:auto}
+  .timer-actions>.btn.ghost{flex:0 0 82px;padding-left:8px;padding-right:8px}
+  /* 计时中切琥珀配色，沿用 LeiBox tactile 双层按压结构 */
+  .btn.tactile.running{
+    --button-surface-start:#ffc95e;--button-surface-end:#f5a623;
+    --button-text-start:#ffffff;--button-text-end:#fff7e8;
+    background-color:#a76b00;
+    box-shadow:0 2px 0 rgba(150,92,0,.85),0 5px 12px rgba(245,166,35,.3);
+  }
+  .btn.tactile.running::after{background:linear-gradient(-135deg,rgba(110,64,0,.42),transparent 45%)}
+  .btn.tactile.running .button-outer{
+    box-shadow:0 .05em .05em -.01em rgba(150,92,0,.85),0 .01em .01em -.01em rgba(150,92,0,.5),
+      .15em .3em .1em -.01em rgba(150,92,0,.3);}
+  .btn.tactile.running:hover .button-outer{
+    box-shadow:0 0 0 0 rgba(150,92,0,.85),0 0 0 0 rgba(150,92,0,.5),0 0 0 0 rgba(150,92,0,.3)}
+  .btn.tactile.running.solid:active{box-shadow:0 1px 0 rgba(150,92,0,.85),0 2px 6px rgba(245,166,35,.22)}
+  .btn.tactile.running:focus-visible{outline-color:var(--amber)}
+  #timerHead{animation:tmrGlow 1.5s ease-in-out infinite}
+  @keyframes tmrGlow{0%,100%{opacity:1}50%{opacity:.45}}
+
+  /* 明细列表 */
+  .sec-title{font-size:13px;font-weight:800;color:var(--sub);margin:18px 2px 10px;display:flex;justify-content:space-between}
+  .item{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;background:#fff}
+  .item .ic{width:38px;height:38px;border-radius:10px;background:var(--primary-soft);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .item .body{flex:1;min-width:0}
+  .item .body .c{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .body .m{font-size:12px;color:var(--sub);margin-top:2px}
+  .item .d{font-weight:800;color:var(--primary);font-size:15px;white-space:nowrap}
+  .item .ops{display:flex;gap:4px}
+  .mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:12px;color:var(--sub);cursor:pointer}
+  .mini:hover{border-color:var(--primary);color:var(--primary)}
+  .mini.del{color:var(--danger)}
+  .mini.del:hover{border-color:var(--danger);background:#fff0f0}
+  .tbl-del{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 9px;font-size:12px;color:var(--danger);cursor:pointer;font-weight:700;white-space:nowrap}
+  .tbl-del:hover{border-color:var(--danger);background:#fff0f0}
+  .empty{text-align:center;color:var(--sub);padding:34px 12px;font-size:13.5px}
+  .empty .e{font-size:30px;margin-bottom:8px}
+
+  /* 统计段 */
+  .subseg{display:flex;background:#eceef2;border-radius:11px;padding:4px;gap:4px;margin-bottom:16px}
+  .subseg button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer}
+  .subseg button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+  .stat-row{display:flex;gap:10px;margin-bottom:16px}
+  .stat{flex:1;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:14px}
+  .stat .n{font-size:22px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat .l{font-size:11.5px;color:var(--sub);margin-top:4px;font-weight:600}
+  .stat.am .n{color:var(--amber)}
+  .controller{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .controller select{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;background:#fff;color:var(--ink)}
+  .wk-nav{display:flex;align-items:center;gap:10px}
+  .wk-nav .r{font-weight:800;color:var(--primary);font-size:13.5px}
+  .arrow{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer;color:var(--sub);font-weight:700}
+  .arrow:hover{border-color:var(--primary);color:var(--primary)}
+  #weekChart,#monthStatsChart,#yearChart{overflow-x:auto}
+  #weekChart svg,#monthStatsChart svg,#yearChart svg{max-width:none}
+  svg{display:block;max-width:100%;height:auto;margin:0 auto}
+  .barlabel{font-size:10px;fill:var(--sub)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-size:11.5px;color:var(--sub);font-weight:700}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+
+  .foot{text-align:center;color:#aab1bd;font-size:11.5px;margin-top:8px;line-height:1.7}
+
+  /* 数据页 */
+  .menu{display:flex;flex-direction:column;gap:2px}
+  .menu button{display:flex;align-items:center;justify-content:space-between;width:100%;border:none;background:#fff;
+    padding:15px 16px;border-radius:12px;font-size:14.5px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;
+    box-shadow:var(--shadow);margin-bottom:10px}
+  .menu button:hover{background:#f8faff}
+  .menu button .ar{color:var(--sub);font-weight:800}
+  .menu button.danger{color:var(--danger)}
+  .note{font-size:12px;color:var(--sub);line-height:1.7;background:#f6f8fc;border-radius:12px;padding:14px 16px;margin-top:6px}
+
+  /* ===== 底部导航 · 设计语言来自 LeiBox Glass Tab Menu =====
+   * 来源：https://leibox.pantoria.cn/docs/animations/glass-tab-menu（设计参考 solutionb）
+   * 复用其「磨砂玻璃栏 + 半透明选中块通透滑动」手法；
+   * 原包内嵌 172KB 字体 + Shadow DOM 演示壳，不适合单文件离线工具，故按本项目 DOM 轻量重绘。
+   */
+  .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;
+    background:rgba(255,255,255,.76);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-top:1px solid rgba(255,255,255,.75);
+    box-shadow:0 -2px 20px rgba(20,30,50,.08);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  #tabIndicator{position:absolute;left:8px;top:6px;bottom:calc(6px + env(safe-area-inset-bottom));
+    width:calc((100% - 16px)/3);border-radius:14px;pointer-events:none;z-index:0;
+    background:rgba(255,255,255,.72);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 2px 10px rgba(47,109,246,.1),inset 0 1px 0 rgba(255,255,255,.9);
+    transform:translateX(calc(var(--tab-i,0) * 100%));
+    transition:transform .42s cubic-bezier(.22,1,.36,1)}
+  .tabbar .tb{flex:1;border:none;background:none;padding:7px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;
+    cursor:pointer;color:var(--sub);font-size:11px;font-weight:700;border-radius:10px;position:relative;z-index:1;
+    transition:color .22s ease}
+  .tabbar .tb .ic{font-size:20px;line-height:1;transition:transform .32s cubic-bezier(.22,1,.36,1)}
+  .tabbar .tb.active{color:var(--primary)}
+  .tabbar .tb.active .ic{transform:translateY(-2px) scale(1.08)}
+  .tabbar .tb:active{transform:scale(.96)}
+
+  /* 撤销条 */
+  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(20px);background:#222a38;color:#fff;
+    padding:11px 20px;border-radius:12px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:99;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #undoBtn{pointer-events:auto;color:#8fb8ff;font-weight:800;cursor:pointer;margin-left:8px;text-decoration:underline}
+
+  @media(max-width:520px){.ring-wrap{width:240px}.tp-range .tp-input{font-size:14px;padding:11px 0}.tp-prefix,.tp-suffix{width:28px}}
+  /* 沿用 LeiBox motion-runtime：系统开启「减少动态效果」时关闭过渡 */
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+    .btn.tactile .button-outer,.btn.tactile .button-inner,.btn.tactile .button-inner span{transition:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">⏱</span>加班记录</div>
+</header>
+
+<main>
+  <!-- 记录：日历 + 打卡 + 当天明细 合一 -->
+  <section id="tab-record" class="tab active">
+    <div class="card">
+      <div class="cal-head">
+        <button class="arrow" onclick="shiftMonth(-1)">‹</button>
+        <button class="cal-title" onclick="toggleCalPicker()">
+          <span class="ct-main"><span id="calMain" class="hd-main">—</span><span class="chev">▾</span></span>
+          <span class="cal-lunar hd-lunar" id="calLunar"></span>
+        </button>
+        <button class="arrow" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="cal-picker" id="calPicker">
+        <div id="pickMonthView">
+          <div class="cp-top">
+            <button class="ybtn" onclick="shiftPickerYear(-1)">‹</button>
+            <button class="cp-drill" onclick="drillToYear()"><span id="cpYear">2026</span>年<span class="dchev">▾</span></button>
+            <button class="ybtn" onclick="shiftPickerYear(1)">›</button>
+          </div>
+          <div class="cp-hint">选择月份</div>
+          <div class="cp-months" id="cpMonths"></div>
+        </div>
+        <div id="pickYearView" style="display:none">
+          <div class="cp-top">
+            <button class="ybtn" onclick="shiftYearDecade(-1)">‹</button>
+            <span id="cpDecade" style="font-size:15px;font-weight:800;color:var(--ink);min-width:98px;text-align:center">2021-2032</span>
+            <button class="ybtn" onclick="shiftYearDecade(1)">›</button>
+          </div>
+          <div class="cp-hint">选择年份 · 点选后回到月份</div>
+          <div class="cp-years" id="cpYears"></div>
+        </div>
+      </div>
+      <div class="cal" id="calendar"></div>
+      <div class="cal-legend">蓝底/越深＝加班越久 · 红点＝超 8 小时 · 蓝块为今天 · 点日期看当天</div>
+    </div>
+
+    <div class="card ring-card">
+      <div class="ring-wrap" id="ringWrap"></div>
+      <div class="timer-zone" id="timerZone">
+        <div class="timer-status"><span class="ts-dot"></span><span id="timerStatusText">点「开始计时」，圆环实时走动 · 内圈 1 小时/圈</span></div>
+        <div class="timer-actions">
+          <button type="button" class="btn solid tactile" id="timerBtn" onclick="toggleTimer()"><span class="button-outer"><span class="button-inner"><span id="timerLabel">▶ 开始计时</span></span></span></button>
+          <button type="button" class="btn ghost" id="timerCancelBtn" style="display:none" onclick="cancelTimer()">取消</button>
+        </div>
+      </div>
+      <div class="ring-mini">
+        <div class="rm"><div class="n" id="ovWeek">0.0<small>h</small></div><div class="l">本周累计</div></div>
+        <div class="rm am"><div class="n" id="ovMonth">0.0<small>h</small></div><div class="l">本月累计</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="rec-h">记一笔</h2>
+      <input type="hidden" id="f_date" value="">
+      <button type="button" class="date-block" onclick="toggleCalPicker()">
+        <span class="db-left"><span class="db-cal">📅</span>
+          <span class="db-text"><span class="db-main hd-main">—</span><span class="db-lunar hd-lunar"></span></span>
+        </span>
+        <span class="chev">▾</span>
+      </button>
+      <form id="entryForm" onsubmit="saveRecord(event)">
+        <input type="hidden" id="editId">
+        <label class="fld">起止时间</label>
+        <div class="tp-range" id="tpRange">
+          <span class="tp-prefix" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.2v5.1l3.3 2"/></svg></span>
+          <div class="tp-field">
+            <input type="time" id="f_start" class="tp-input" placeholder="开始时间" aria-label="开始时间">
+            <button type="button" class="tp-clear" data-target="f_start" title="清除开始时间">×</button>
+          </div>
+          <span class="tp-sep" aria-hidden="true">→</span>
+          <div class="tp-field">
+            <input type="time" id="f_end" class="tp-input" placeholder="结束时间" aria-label="结束时间">
+            <button type="button" class="tp-clear" data-target="f_end" title="清除结束时间">×</button>
+          </div>
+          <button type="button" class="tp-suffix" id="tpToggle" title="打开时间面板" aria-label="打开时间面板" aria-expanded="false"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.2v5.1l3.3 2"/></svg></button>
+          <div class="tp-panel" id="tpPanel" hidden>
+            <div class="tp-panel-head">
+              <span id="tpPanelTitle">选择开始时间</span>
+              <div class="tp-switch">
+                <button type="button" class="tp-tab active" data-which="f_start">开始</button>
+                <button type="button" class="tp-tab" data-which="f_end">结束</button>
+              </div>
+            </div>
+            <div class="tp-col-head"><span>时</span><span>分</span></div>
+            <div class="tp-cols">
+              <div class="tp-col" id="tpHours"></div>
+              <div class="tp-col" id="tpMinutes"></div>
+            </div>
+            <div class="tp-panel-foot">
+              <button type="button" class="tp-link" onclick="tpNow()">此刻</button>
+              <button type="button" class="tp-ok" onclick="tpConfirm()">确定</button>
+            </div>
+          </div>
+        </div>
+        <label class="fld" style="margin-top:13px">时长（留空则按起止自动算）</label>
+        <div class="dur-row">
+          <input type="number" id="f_dur" placeholder="手动填时长，如 2.5" step="0.1" min="0">
+          <div class="chips" id="durChips">
+            <button type="button" class="chip" onclick="setDur(0.5)">0.5h</button>
+            <button type="button" class="chip" onclick="setDur(1)">1h</button>
+            <button type="button" class="chip" onclick="setDur(2)">2h</button>
+            <button type="button" class="chip" onclick="setDur(3)">3h</button>
+          </div>
+        </div>
+        <label class="fld" style="margin-top:13px">工作内容</label>
+        <input type="text" id="f_content" placeholder="做了啥？如：写周报、处理投诉工单" required autocomplete="off">
+        <div class="chips" id="recentChips" style="margin-top:9px"></div>
+        <div class="calc" id="calcPreview"></div>
+        <div class="rec-actions">
+          <button type="submit" class="btn solid tactile" id="saveBtn"><span class="button-outer"><span class="button-inner"><span id="saveLabel">保存</span></span></span></button>
+          <button type="button" class="btn ghost" id="cancelEditBtn" style="display:none" onclick="cancelEdit()">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="sec-title"><span id="todayLabel">今日明细</span><span id="todayTotal"></span></div>
+    <div id="todayList"></div>
+  </section>
+
+  <!-- 统计 -->
+  <section id="tab-stats" class="tab">
+    <div class="subseg">
+      <button class="active" data-sub="week" onclick="switchSub('week')">周</button>
+      <button data-sub="month" onclick="switchSub('month')">月</button>
+      <button data-sub="year" onclick="switchSub('year')">年</button>
+    </div>
+    <div id="sub-week">
+      <div class="controller">
+        <div class="wk-nav">
+          <button class="arrow" onclick="shiftWeek(-1)">‹</button>
+          <span class="r" id="weekRange"></span>
+          <button class="arrow" onclick="shiftWeek(1)">›</button>
+        </div>
+        <input type="date" id="weekJump" onchange="jumpWeek(this.value)" style="margin-left:auto;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px">
+      </div>
+      <div class="stat-row" id="weekStats"></div>
+      <div class="card" id="weekChart"></div>
+      <div id="weekTable"></div>
+    </div>
+    <div id="sub-month" style="display:none">
+      <div class="stat-row" id="monthStats"></div>
+      <div class="card" id="monthStatsChart"></div>
+      <div id="monthTable"></div>
+    </div>
+    <div id="sub-year" style="display:none">
+      <div class="controller">
+        <select id="yearPick" onchange="renderYear()"></select>
+      </div>
+      <div class="stat-row" id="yearStats"></div>
+      <div class="card" id="yearChart"></div>
+      <div id="yearTable"></div>
+    </div>
+  </section>
+
+  <!-- 数据 -->
+  <section id="tab-data" class="tab">
+    <div class="menu">
+      <button onclick="exportCSV()">导出 CSV（Excel 可打开）<span class="ar">›</span></button>
+      <button onclick="exportData()">备份数据（JSON）<span class="ar">›</span></button>
+      <button onclick="importData()">恢复数据（JSON）<span class="ar">›</span></button>
+      <button onclick="loadSample()">载入示例数据<span class="ar">›</span></button>
+      <button class="danger" onclick="clearAll()">清空全部数据<span class="ar">›</span></button>
+    </div>
+    <div class="note">纯本地工具 · 数据仅存您浏览器，不上传任何服务器。<br>建议定期「备份数据」导出文件，防止清缓存丢记录。</div>
+    <div class="foot">本地单文件 · 零广告 · 离线可用</div>
+  </section>
+</main>
+
+<!-- 底部导航 -->
+<nav class="tabbar">
+  <span id="tabIndicator"></span>
+  <button class="tb active" data-tab="record" onclick="switchTab('record')"><span class="ic">📅</span>记录</button>
+  <button class="tb" data-tab="stats" onclick="switchTab('stats')"><span class="ic">📊</span>统计</button>
+  <button class="tb" data-tab="data" onclick="switchTab('data')"><span class="ic">⚙️</span>数据</button>
+</nav>
+
+<div class="cal-mask" id="calMask" onclick="closeCalPicker()"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="application/json" style="display:none" onchange="handleImport(event)">
+
+<script>
+const STORE_KEY='overtime_records_v1';
+let records=load();
+let calY=new Date().getFullYear(),calM=new Date().getMonth()+1;
+
+function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||[]}catch(e){return[]}}
+function save(){localStorage.setItem(STORE_KEY,JSON.stringify(records))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+
+/* 时间工具 */
+function pad(n){return String(n).padStart(2,'0')}
+function fmtDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function todayStr(){return fmtDate(new Date())}
+function weekStart(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(0,0,0,0);return x}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function parseTime(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m}
+function calcDuration(s,e){if(!s||!e)return null;let a=parseTime(s),b=parseTime(e);if(b<a)b+=1440;return (b-a)/60}
+function fmtDur(h){if(h==null||isNaN(h))return '0';if(h===0)return '0';const sign=h<0?'-':'';h=Math.abs(h);const hh=Math.floor(h);const mm=Math.round((h-hh)*60);let s='';if(hh>0)s+=hh+'小时';if(mm>0)s+=mm+'分';return sign+s}
+function fmtDurShort(h){if(h==null||isNaN(h))return '0.0';const hh=Math.floor(h);const mm=Math.round((h-hh)*60);return (hh+mm/60).toFixed(1)}
+
+/* 农历（1900-2100） */
+const LunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055b2,0x04ae0,0x0a5b8,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b8,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,0x0a2e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,0x0d520];
+const nStr1=["日","一","二","三","四","五","六","七","八","九","十"];
+const nStr2=["初","十","廿","卅"];
+const nStr3=["正","二","三","四","五","六","七","八","九","十","冬","腊"];
+function lYearDays(y){let sum=348;for(let i=0x8000;i>0x8;i>>=1)sum+=(LunarInfo[y-1900]&i)?1:0;return sum+leapDays(y);}
+function leapDays(y){if(leapMonth(y))return (LunarInfo[y-1900]&0x10000)?30:29;return 0;}
+function leapMonth(y){return LunarInfo[y-1900]&0xf;}
+function monthDays(y,m){return (LunarInfo[y-1900]&(0x10000>>m))?30:29;}
+function lDay(d){if(d===10)return"初十";if(d===20)return"二十";if(d===30)return"三十";return nStr2[Math.floor(d/10)]+nStr1[d%10];}
+function solarToLunar(y,m,d){
+  const base=new Date(1900,0,31),obj=new Date(y,m-1,d);
+  let offset=Math.round((obj-base)/86400000),i,temp;
+  for(i=1900;i<2101&&offset>0;i++){temp=lYearDays(i);offset-=temp;}
+  if(offset<0){offset+=temp;i--;}
+  let isLeap=false;const ly=i,lm0=leapMonth(ly);
+  for(i=1;i<13&&offset>0;i++){
+    if(lm0>0&&i===lm0+1&&!isLeap){--i;isLeap=true;temp=leapDays(ly);}
+    else temp=monthDays(ly,i);
+    if(isLeap&&i===lm0+1)isLeap=false;
+    offset-=temp;
+  }
+  if(offset===0&&lm0>0&&i===lm0+1){if(isLeap)isLeap=false;else{isLeap=true;--i;}}
+  if(offset<0){offset+=temp;--i;}
+  return (isLeap?"闰":"")+nStr3[i-1]+"月"+lDay(offset+1);
+}
+
+/* 录入 */
+function saveRecord(e){
+  e.preventDefault();
+  if(tpOpen)tpClose();
+  const date=document.getElementById('f_date').value||todayStr();
+  const start=document.getElementById('f_start').value;
+  const end=document.getElementById('f_end').value;
+  let dur=document.getElementById('f_dur').value;
+  dur=dur===''?(calcDuration(start,end)??0):parseFloat(dur);
+  const content=document.getElementById('f_content').value.trim();
+  if(!content){toast('先写点工作内容吧');return}
+  if(isNaN(dur)||dur<0){toast('时长填错啦');return}
+  const editId=document.getElementById('editId').value;
+  const rec={id:editId||uid(),date,start,end,duration:Math.round(dur*100)/100,content,note:''};
+  if(editId){const i=records.findIndex(r=>r.id===editId);if(i>=0)records[i]=rec;toast('已更新')}
+  else{records.push(rec);toast('记下了 ⏱')}
+  save();
+  document.getElementById('f_content').value='';
+  document.getElementById('f_start').value='';document.getElementById('f_end').value='';document.getElementById('f_dur').value='';
+  document.getElementById('editId').value='';document.getElementById('calcPreview').textContent='';
+  document.getElementById('saveLabel').textContent='保存';
+  document.getElementById('cancelEditBtn').style.display='none';
+  document.getElementById('f_content').focus();
+  renderRecentChips();
+  refreshRecord();
+}
+document.addEventListener('input',e=>{
+  if(['f_start','f_end','f_dur'].includes(e.target.id)){
+    const sEl=document.getElementById('f_start'),eEl=document.getElementById('f_end'),dEl=document.getElementById('f_dur');
+    const s=sEl.value,e2=eEl.value,d=dEl.value;
+    const pv=document.getElementById('calcPreview');
+    if(d!==''){sEl.value='';eEl.value='';pv.textContent='手动时长 '+fmtDur(parseFloat(d))+'（覆盖自动）';}
+    else if(s&&e2){dEl.value='';pv.textContent='自动算出 '+fmtDur(calcDuration(s,e2));}
+    else pv.textContent='';
+  }
+});
+function setDur(v){
+  document.getElementById('f_dur').value=v;
+  document.getElementById('f_start').value='';
+  document.getElementById('f_end').value='';
+  document.getElementById('calcPreview').textContent='手动时长 '+fmtDur(v);
+}
+/* ===== 起止时间选择器：借鉴 Ant Design 5 TimePicker / RangePicker 的 UI =====
+ * 原生实现：prefix / suffix 图标、RangePicker 式整体聚焦、下拉时分面板、
+ * 开始→结束联动、此刻 / 确定。保留 input[type=time] 供键盘直接输入；
+ * 回填后 dispatch input 事件，复用既有「自动算时长」逻辑，不重复实现。
+ */
+let tpTarget='f_start',tpSel={h:0,m:0},tpOpen=false;
+// 不依赖 inline event 参数；按钮本就在 .tp-range 内，document 的「外部点击关闭」不会误伤
+function tpToggle(){tpOpen?tpClose():tpOpenFor(tpTarget)}
+function tpOpenFor(which){
+  tpOpen=true;
+  document.getElementById('tpPanel').hidden=false;
+  document.getElementById('tpRange').classList.add('open');
+  document.getElementById('tpToggle').setAttribute('aria-expanded','true');
+  tpSetTarget(which);
+}
+function tpClose(){
+  tpOpen=false;
+  document.getElementById('tpPanel').hidden=true;
+  document.getElementById('tpRange').classList.remove('open');
+  document.getElementById('tpToggle').setAttribute('aria-expanded','false');
+}
+function tpSetTarget(which){
+  tpTarget=which;
+  document.querySelectorAll('.tp-tab').forEach(b=>b.classList.toggle('active',b.dataset.which===which));
+  document.getElementById('tpPanelTitle').textContent=which==='f_start'?'选择开始时间':'选择结束时间';
+  const v=document.getElementById(which).value,n=new Date();
+  // 借鉴 defaultOpenValue：输入框为空时给面板一个默认落点（antd 示例是 00:00:00，这里改「此刻」）
+  const [h,m]=v?v.split(':').map(Number):[n.getHours(),n.getMinutes()];
+  tpSel={h,m};tpRenderCols();
+}
+function tpRenderCols(){
+  const H=document.getElementById('tpHours'),M=document.getElementById('tpMinutes');
+  H.innerHTML=Array.from({length:24},(_,i)=>`<div class="tp-cell${i===tpSel.h?' selected':''}" data-v="${i}">${pad(i)}</div>`).join('');
+  M.innerHTML=Array.from({length:60},(_,i)=>`<div class="tp-cell${i===tpSel.m?' selected':''}" data-v="${i}">${pad(i)}</div>`).join('');
+  tpScroll(H);tpScroll(M);
+}
+function tpScroll(col){const el=col.querySelector('.selected');if(el)col.scrollTop=el.offsetTop-col.clientHeight/2+el.offsetHeight/2}
+function tpPick(e){
+  const cell=e.target.closest('.tp-cell');if(!cell)return;
+  if(e.currentTarget.id==='tpHours')tpSel.h=+cell.dataset.v;else tpSel.m=+cell.dataset.v;
+  tpRenderCols();
+}
+function tpNow(){const n=new Date();tpSel={h:n.getHours(),m:n.getMinutes()};tpRenderCols()}
+function tpConfirm(){
+  // 显式选了起止时间就让出手动时长，否则原有 input 逻辑会把刚选的时间反向清空
+  const dEl=document.getElementById('f_dur');if(dEl.value)dEl.value='';
+  const el=document.getElementById(tpTarget);
+  el.value=pad(tpSel.h)+':'+pad(tpSel.m);
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  const other=tpTarget==='f_start'?'f_end':'f_start';
+  if(tpTarget==='f_start'&&!document.getElementById(other).value){tpSetTarget(other);return} // RangePicker 联动
+  tpClose();
+}
+// 用 addEventListener 绑定，别写 inline onclick="tpToggle()"：
+// id 与函数同名时，inline handler 作用域里 tpToggle 会被解析成 DOM 元素 → "is not a function"
+document.getElementById('tpToggle').addEventListener('click',tpToggle);
+document.getElementById('tpHours').addEventListener('click',tpPick);
+document.getElementById('tpMinutes').addEventListener('click',tpPick);
+document.getElementById('tpRange').addEventListener('click',e=>{
+  const c=e.target.closest('.tp-clear');
+  if(c){const el=document.getElementById(c.dataset.target);el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));e.stopPropagation();return}
+  const t=e.target.closest('.tp-tab');
+  if(t){tpSetTarget(t.dataset.which);return}
+  const f=e.target.closest('.tp-field');
+  if(f&&!tpOpen)tpOpenFor(f.querySelector('input').id);
+});
+// 用事件路径快照判断「内部点击」：tpPick 会用 innerHTML 重建列，
+// 事件冒泡到 document 时 e.target 已从 DOM 分离，contains(e.target) 会误判成外部点击而关掉面板。
+document.addEventListener('click',e=>{
+  if(!tpOpen)return;
+  const range=document.getElementById('tpRange');
+  const path=e.composedPath?e.composedPath():[];
+  const inside=path.length?path.includes(range):range.contains(e.target);
+  if(!inside)tpClose();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&tpOpen)tpClose()});
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let recentContents=[];
+function renderRecentChips(){
+  const used=new Set(),seen=[];
+  records.slice().reverse().forEach(r=>{if(r.content&&!used.has(r.content)){used.add(r.content);seen.push(r.content)}});
+  recentContents=seen.slice(0,6);
+  document.getElementById('recentChips').innerHTML=recentContents.length
+    ?'<span style="font-size:11px;color:var(--sub);font-weight:700;align-self:center;margin-right:2px">常用</span>'+recentContents.map((c,i)=>`<button type="button" class="chip" data-i="${i}">${escapeHtml(c)}</button>`).join('')
+    :'';
+}
+document.getElementById('recentChips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const c=recentContents[+b.dataset.i];if(c)document.getElementById('f_content').value=c;
+});
+function cancelEdit(){
+  document.getElementById('editId').value='';
+  document.getElementById('f_start').value='';document.getElementById('f_end').value='';document.getElementById('f_dur').value='';
+  document.getElementById('f_content').value='';
+  document.getElementById('calcPreview').textContent='';
+  document.getElementById('saveLabel').textContent='保存';
+  document.getElementById('cancelEditBtn').style.display='none';
+}
+function setCalHeader(ds){
+  const d=parseDate(ds);
+  const wk=['日','一','二','三','四','五','六'][d.getDay()];
+  const main=(d.getMonth()+1)+'月'+d.getDate()+'日 星期'+wk;
+  const lunar='农历 <b>'+solarToLunar(d.getFullYear(),d.getMonth()+1,d.getDate())+'</b>';
+  document.querySelectorAll('.hd-main').forEach(el=>el.textContent=main);
+  document.querySelectorAll('.hd-lunar').forEach(el=>el.innerHTML=lunar);
+}
+
+/* 概览 + 记录页刷新 */
+function sumRange(s,e){return records.filter(r=>{const d=parseDate(r.date);return d>=s&&d<=e}).reduce((a,r)=>a+(r.duration||0),0)}
+function renderOverview(){
+  const t=parseDate(todayStr());
+  const ws=weekStart(t),we=addDays(ws,6);
+  const wk=sumRange(ws,we);
+  const ms=new Date(t.getFullYear(),t.getMonth(),1),me=new Date(t.getFullYear(),t.getMonth()+1,0);
+  const mo=sumRange(ms,me);
+  document.getElementById('ovWeek').innerHTML=fmtDurShort(wk)+'<small>h</small>';
+  document.getElementById('ovMonth').innerHTML=fmtDurShort(mo)+'<small>h</small>';
+}
+function refreshRecord(){
+  const ds=document.getElementById('f_date').value||todayStr();
+  document.getElementById('f_date').value=ds;
+  const d=parseDate(ds);calY=d.getFullYear();calM=d.getMonth()+1;
+  setCalHeader(ds);
+  renderMonth();renderToday();renderOverview();renderRecentChips();
+}
+function renderToday(){
+  const d=document.getElementById('f_date').value||todayStr();
+  const isToday=d===todayStr();
+  document.getElementById('todayLabel').textContent=isToday?'今日明细':(parseDate(d).getMonth()+1)+'月'+parseDate(d).getDate()+'日 明细';
+  const rs=records.filter(r=>r.date===d).sort((a,b)=>(a.start||'99').localeCompare(b.start||'99'));
+  const total=rs.reduce((a,r)=>a+(r.duration||0),0);
+  renderRing(d);
+  document.getElementById('todayTotal').textContent=rs.length?('合计 '+fmtDur(total)):'';
+  const box=document.getElementById('todayList');
+  if(rs.length===0){box.innerHTML='<div class="empty"><div class="e">🌙</div>'+(isToday?'今天还没加班记录，准点下班？':'这天没记录')+'</div>';return}
+  box.innerHTML=rs.map(r=>`
+    <div class="item">
+      <div class="ic">⏱</div>
+      <div class="body"><div class="c">${r.content}</div>
+        <div class="m">${r.start&&r.end?r.start+'–'+r.end:'时长 '+fmtDur(r.duration)}</div></div>
+      <div class="d">${fmtDur(r.duration)}</div>
+      <div class="ops"><button class="mini" onclick="editRecord('${r.id}')">编</button>
+        <button class="mini del" onclick="delRecord('${r.id}')">删除</button></div>
+    </div>`).join('');
+}
+
+/* 大圆环：24h 时间环 */
+function hourAngle(hh,mm){return (hh+(mm||0)/60)*15;}
+function polar(cx,cy,r,ang){const t=(ang-90)*Math.PI/180;return [cx+r*Math.cos(t),cy+r*Math.sin(t)];}
+function arcPath(cx,cy,r,a0,a1){
+  let d=a1-a0;if(d<0)d+=360;if(d===0)d=0.01;
+  const [x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);
+  const large=d>180?1:0;
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function renderRing(dateStr){
+  const cx=140,cy=140,R=122,ringR=104,barW=20;
+  const rs=records.filter(r=>r.date===dateStr);
+  const total=rs.reduce((a,r)=>a+(r.duration||0),0);
+  const isToday=dateStr===todayStr();
+  const showTimer=!!timer&&dateStr===timer.startDate; // 实时弧只画在计时开始那天
+  let svg=`<svg viewBox="0 0 280 280" width="260" height="260" role="img" aria-label="当日24小时加班环">`;
+  svg+=`<circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="#eef0f3" stroke-width="${barW}"/>`;
+  if(showTimer)svg+=`<circle cx="${cx}" cy="${cy}" r="84" fill="none" stroke="#f6f1e6" stroke-width="4"/>`;
+  for(let h=0;h<24;h++){
+    const [x1,y1]=polar(cx,cy,R-1,h*15),[x2,y2]=polar(cx,cy,R-11,h*15);
+    svg+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#d6dae1" stroke-width="1.4"/>`;
+    if(h%6===0){const [tx,ty]=polar(cx,cy,R-22,h*15);
+      svg+=`<text x="${tx.toFixed(1)}" y="${(ty+3.5).toFixed(1)}" text-anchor="middle" font-size="10" fill="#aab1bd" font-weight="800">${pad(h)}</text>`;}
+  }
+  rs.forEach(r=>{if(!r.start||!r.end)return;let a0=hourAngle(...r.start.split(':').map(Number)),a1=hourAngle(...r.end.split(':').map(Number));if(a1<a0)a1+=360;
+    svg+=`<path d="${arcPath(cx,cy,ringR,a0,a1)}" fill="none" stroke="url(#ringG)" stroke-width="${barW}" stroke-linecap="round"><title>${r.content} ${r.start}-${r.end}</title></path>`;});
+  if(showTimer){
+    const {a0,a1}=timerAngles(),sec=(Date.now()-timer.startAt)/1000,frac=(sec%3600)/3600;
+    svg+=`<path id="timerMinArc" d="${frac<=.001?'':arcPath(cx,cy,84,0,Math.min(359.9,frac*360))}" fill="none" stroke="#f5a623" stroke-width="4" stroke-linecap="round" opacity=".8"/>`;
+    svg+=`<path id="timerArc" d="${arcPath(cx,cy,ringR,a0,a1)}" fill="none" stroke="url(#ringT)" stroke-width="${barW}" stroke-linecap="round"><title>本次实时计时</title></path>`;
+    const [hx,hy]=polar(cx,cy,ringR,a1);
+    svg+=`<circle id="timerHead" cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="7" fill="#f5a623" stroke="#fff" stroke-width="2.5"/>`;
+  }
+  // 计时中由琥珀弧末端的圆点指示「现在」，跳过红针（避免红线穿过中央秒表）
+  if(isToday&&!showTimer){const now=new Date(),na=hourAngle(now.getHours(),now.getMinutes());
+    const [nx,ny]=polar(cx,cy,ringR,na),[ix,iy]=polar(cx,cy,R-3,na);
+    svg+=`<line x1="${cx}" y1="${cy}" x2="${ix.toFixed(1)}" y2="${iy.toFixed(1)}" stroke="#ef5350" stroke-width="2"/>`;
+    svg+=`<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="5.5" fill="#ef5350" stroke="#fff" stroke-width="2"/>`;}
+  svg+=`<defs><linearGradient id="ringG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8dff"/><stop offset="1" stop-color="#2f6df6"/></linearGradient>`;
+  svg+=`<linearGradient id="ringT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffcf6b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs>`;
+  if(showTimer){
+    svg+=`<text id="ringClock" x="${cx}" y="${cy-2}" text-anchor="middle" font-size="29" font-weight="800" fill="#d98200" style="font-variant-numeric:tabular-nums">${fmtClock(Date.now()-timer.startAt)}</text>`;
+    svg+=`<text x="${cx}" y="${cy+23}" text-anchor="middle" font-size="12" fill="#8a93a3" font-weight="700">计时中 · 今日已记 ${fmtDurShort(total)}h</text>`;
+  }else{
+    const sub=total>0?(isToday?'今日加班':dateStr.slice(5)+' 加班'):(isToday?'今日未加班':'当天无记录');
+    svg+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="36" font-weight="800" fill="#1f2430">${fmtDurShort(total)}</text>`;
+    svg+=`<text x="${cx}" y="${cy+21}" text-anchor="middle" font-size="12" fill="#8a93a3" font-weight="700">${sub}</text>`;
+    if(rs.length)svg+=`<text x="${cx}" y="${cy+39}" text-anchor="middle" font-size="11" fill="#b6bcc7">${rs.length} 个事项</text>`;
+  }
+  svg+=`</svg>`;
+  const w=document.getElementById('ringWrap');if(w)w.innerHTML=svg;
+  if(showTimer)updateTimerOverlay();
+}
+
+/* ===== 实时计时（番茄钟式）=====
+ * 开始时刻存 localStorage，刷新/关页不丢；每秒只改 SVG 内 4 个节点，不整块重绘（动画不会重启）。
+ */
+const TIMER_KEY='overtime_timer_v1';
+let timer=null,timerTick=null;
+function loadTimer(){try{const t=JSON.parse(localStorage.getItem(TIMER_KEY));return(t&&typeof t.startAt==='number')?t:null}catch(e){return null}}
+function saveTimer(){if(timer)localStorage.setItem(TIMER_KEY,JSON.stringify(timer));else localStorage.removeItem(TIMER_KEY)}
+function hm(d){return pad(d.getHours())+':'+pad(d.getMinutes())}
+function fmtClock(ms){
+  const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
+  return h>0?h+':'+pad(m)+':'+pad(ss):pad(m)+':'+pad(ss);
+}
+function todayHours(){return records.filter(r=>r.date===todayStr()).reduce((a,r)=>a+(r.duration||0),0)}
+function timerAngles(){
+  const a0=hourAngle(...timer.startHM.split(':').map(Number));
+  const now=new Date();let a1=hourAngle(now.getHours(),now.getMinutes()+now.getSeconds()/60);
+  if(a1<a0)a1+=360;
+  return {a0,a1:Math.min(a0+359.9,a1)};
+}
+function toggleTimer(){timer?stopTimer():startTimer()}
+function startTimer(){
+  const now=new Date();
+  timer={startAt:now.getTime(),startDate:fmtDate(now),startHM:hm(now)};
+  saveTimer();renderTimerUI();startTick();
+  renderRing(document.getElementById('f_date').value||todayStr());
+  toast('开始计时 ⏱ 圆环会跟着走');
+}
+function stopTimer(){
+  if(!timer)return;
+  const ms=Date.now()-timer.startAt;
+  if(ms<10000){toast('才几秒钟，再干会儿～');return}
+  const end=new Date(),startDate=timer.startDate,startHM=timer.startHM,endHM=hm(end),clock=fmtClock(ms);
+  timer=null;saveTimer();stopTick();renderTimerUI();
+  cancelEdit(); // 避免覆盖正在编辑的那条记录
+  document.getElementById('f_date').value=startDate;
+  document.getElementById('f_start').value=startHM;
+  document.getElementById('f_end').value=endHM;
+  document.getElementById('calcPreview').textContent='本次计时 '+clock+' → 按起止自动算 '+fmtDur(calcDuration(startHM,endHM));
+  switchTab('record');
+  const form=document.getElementById('entryForm');
+  if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>{const c=document.getElementById('f_content');if(c)c.focus({preventScroll:true})},380);
+  toast('计时完成，补个工作内容就能存 ✅');
+}
+function cancelTimer(){
+  if(!timer)return;
+  const mins=Math.floor((Date.now()-timer.startAt)/60000);
+  if(mins>=5&&!confirm('已经计时 '+mins+' 分钟，确定丢弃不记录吗？'))return;
+  timer=null;saveTimer();stopTick();renderTimerUI();
+  renderRing(document.getElementById('f_date').value||todayStr());
+  toast('已丢弃本次计时');
+}
+function renderTimerUI(){
+  const zone=document.getElementById('timerZone');if(!zone)return;
+  const running=!!timer;
+  zone.classList.toggle('running',running);
+  document.getElementById('timerBtn').classList.toggle('running',running);
+  document.getElementById('timerLabel').textContent=running?'■ 结束计时':'▶ 开始计时';
+  document.getElementById('timerCancelBtn').style.display=running?'':'none';
+  tickStatus();
+}
+function tickStatus(){
+  const st=document.getElementById('timerStatusText');if(!st)return;
+  st.textContent=timer
+    ?'计时中 '+fmtClock(Date.now()-timer.startAt)+' · 开始于 '+timer.startHM+' · 今日已记 '+fmtDurShort(todayHours())+'h'
+    :'点「开始计时」，圆环实时走动 · 内圈 1 小时/圈';
+}
+function updateTimerOverlay(){
+  if(!timer)return;
+  const {a0,a1}=timerAngles();
+  const arc=document.getElementById('timerArc');
+  if(arc)arc.setAttribute('d',arcPath(140,140,104,a0,a1));
+  const head=document.getElementById('timerHead');
+  if(head){const [hx,hy]=polar(140,140,104,a1);head.setAttribute('cx',hx.toFixed(1));head.setAttribute('cy',hy.toFixed(1))}
+  const minArc=document.getElementById('timerMinArc');
+  if(minArc){const frac=((Date.now()-timer.startAt)/1000%3600)/3600;
+    minArc.setAttribute('d',frac<=.001?'':arcPath(140,140,84,0,Math.min(359.9,frac*360)))}
+  const clk=document.getElementById('ringClock');
+  if(clk)clk.textContent=fmtClock(Date.now()-timer.startAt);
+}
+function tick(){if(!timer)return;updateTimerOverlay();tickStatus()}
+function startTick(){stopTick();timerTick=setInterval(tick,1000);tick()}
+function stopTick(){if(timerTick){clearInterval(timerTick);timerTick=null}}
+
+/* 删除 + 撤销 */
+let lastDeleted=null;
+function delRecord(id){
+  const i=records.findIndex(r=>r.id===id);if(i<0)return;
+  lastDeleted={rec:records[i],idx:i};
+  records.splice(i,1);save();
+  refreshRecord();renderStatsCurrent();
+  showUndo();
+}
+function showUndo(){
+  const t=document.getElementById('toast');
+  t.innerHTML='已删除一条记录 <span id="undoBtn">撤销</span>';
+  t.classList.add('show');clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.classList.remove('show');lastDeleted=null;},4000);
+  document.getElementById('undoBtn').onclick=undoDelete;
+}
+function undoDelete(){
+  if(!lastDeleted)return;
+  const i=Math.min(lastDeleted.idx,records.length);
+  records.splice(i,0,lastDeleted.rec);save();lastDeleted=null;
+  document.getElementById('toast').classList.remove('show');
+  refreshRecord();renderStatsCurrent();toast('已恢复');
+}
+function editRecord(id){
+  const r=records.find(x=>x.id===id);if(!r)return;
+  switchTab('record');
+  document.getElementById('editId').value=r.id;
+  document.getElementById('f_date').value=r.date;
+  document.getElementById('f_start').value=r.start||'';
+  document.getElementById('f_end').value=r.end||'';
+  document.getElementById('f_dur').value=r.duration||'';
+  document.getElementById('f_content').value=r.content||'';
+  document.getElementById('saveLabel').textContent='更新';
+  document.getElementById('cancelEditBtn').style.display='inline-block';
+  refreshRecord();
+  document.getElementById('f_content').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast('修改后点更新');
+}
+
+/* 手机月历导航 */
+function shiftMonth(n){
+  let y=calY,m=calM+n;
+  while(m<1){m+=12;y--} while(m>12){m-=12;y++}
+  const sel=parseDate(document.getElementById('f_date').value);
+  const day=Math.min(sel.getDate(),new Date(y,m,0).getDate());
+  calY=y;calM=m;
+  const ds=fmtDate(new Date(y,m-1,day));
+  document.getElementById('f_date').value=ds;
+  setCalHeader(ds);
+  const cpY=document.getElementById('cpYear');if(cpY)cpY.textContent=calY;
+  const picker=document.getElementById('calPicker');if(picker&&picker.classList.contains('open'))renderPickerMonths();
+  renderMonth();renderToday();renderOverview();
+}
+let pickYear=0,decadeBase=0;
+function toggleCalPicker(){
+  const p=document.getElementById('calPicker'),mask=document.getElementById('calMask');
+  if(!p.classList.contains('open')){
+    pickYear=calY;
+    document.getElementById('pickMonthView').style.display='block';
+    document.getElementById('pickYearView').style.display='none';
+    document.getElementById('cpYear').textContent=calY;
+    renderPickerMonths();
+    p.classList.add('open');mask.classList.add('show');
+  } else { closeCalPicker(); }
+}
+function closeCalPicker(){
+  document.getElementById('calPicker').classList.remove('open');
+  document.getElementById('calMask').classList.remove('show');
+}
+function drillToYear(){
+  decadeBase=pickYear-5;
+  document.getElementById('pickMonthView').style.display='none';
+  document.getElementById('pickYearView').style.display='block';
+  renderPickerYears();
+}
+function drillToMonth(){
+  document.getElementById('pickYearView').style.display='none';
+  document.getElementById('pickMonthView').style.display='block';
+  document.getElementById('cpYear').textContent=pickYear;
+  renderPickerMonths();
+}
+function shiftPickerYear(n){pickYear+=n;document.getElementById('cpYear').textContent=pickYear;renderPickerMonths();}
+function monthHasRecord(y,m){return records.some(r=>{const d=parseDate(r.date);return d.getFullYear()===y&&d.getMonth()+1===m})}
+function renderPickerMonths(){
+  const y=pickYear;let h='';
+  for(let i=1;i<=12;i++){const on=(i===calM&&y===calY),has=monthHasRecord(y,i);
+    h+=`<button class="${on?'on':''}${has?' has':''}" onclick="pickMonth(${i})">${i}月</button>`;}
+  document.getElementById('cpMonths').innerHTML=h;
+}
+function pickMonth(m){
+  const sel=parseDate(document.getElementById('f_date').value);
+  const day=Math.min(sel.getDate(),new Date(pickYear,m,0).getDate());
+  calY=pickYear;calM=m;
+  applyPickedDate(day);
+}
+function shiftYearDecade(n){decadeBase+=n*12;renderPickerYears();}
+function hasYear(y){return records.some(r=>parseDate(r.date).getFullYear()===y);}
+function renderPickerYears(){
+  document.getElementById('cpDecade').textContent=decadeBase+' - '+(decadeBase+11);
+  let h='';
+  for(let i=0;i<12;i++){const y=decadeBase+i;const dim=(y<1900||y>2100||(!hasYear(y)&&y!==calY))?' dim':'';
+    const has=hasYear(y);
+    h+=`<button class="${y===calY?'on':''}${has?' has':''}${dim}" onclick="pickYearSel(${y})">${y}</button>`;}
+  document.getElementById('cpYears').innerHTML=h;
+}
+function pickYearSel(y){
+  pickYear=y;calY=y;
+  const sel=parseDate(document.getElementById('f_date').value);
+  const day=Math.min(sel.getDate(),new Date(calY,calM,0).getDate());
+  document.getElementById('cpYear').textContent=pickYear;
+  document.getElementById('pickYearView').style.display='none';
+  document.getElementById('pickMonthView').style.display='block';
+  renderPickerMonths();
+  applyPickedDate(day,true);
+}
+function applyPickedDate(day,keepOpen){
+  const ds=fmtDate(new Date(calY,calM-1,day));
+  document.getElementById('f_date').value=ds;
+  setCalHeader(ds);renderMonth();renderToday();renderOverview();
+  if(!keepOpen)closeCalPicker();
+}
+function renderMonth(){
+  const y=calY,m=calM,t=todayStr();
+  const dim=new Date(y,m,0).getDate();const daily={};
+  for(let i=1;i<=dim;i++)daily[fmtDate(new Date(y,m-1,i))]=0;
+  records.filter(r=>{const d=parseDate(r.date);return d.getFullYear()===y&&d.getMonth()+1===m})
+    .forEach(r=>daily[r.date]+=(r.duration||0));
+  const gs=weekStart(new Date(y,m-1,1));
+  const sel=document.getElementById('f_date').value;
+  let html=['一','二','三','四','五','六','日'].map(w=>`<div class="ch">${w}</div>`).join('');
+  const OT=8;
+  for(let i=0;i<42;i++){const d=addDays(gs,i);const ds=fmtDate(d);const inM=d.getMonth()+1===m;const v=daily[ds]||0;
+    if(!inM){html+='<div class="cd out"></div>';continue}
+    const today=ds===t,has=v>0,ison=ds===sel,over=v>=OT;
+    const fg=today?'#fff':(v>4?'#fff':'#3a4250');
+    const bg=today?'var(--primary)':(has?(v<=2?'#dbe7ff':v<=4?'#9cc0ff':v<=6?'#4f8bff':'#1c4fc4'):'#fafbfc');
+    const cls='cd'+(ison?' sel':'');
+    html+=`<div class="${cls}" style="background:${bg};color:${fg}" onclick="pickMonthDay('${ds}')">${d.getDate()}${has?`<span class="sub">${fmtDurShort(v)}</span>`:''}${over?'<span class="dot"></span>':''}</div>`;}
+  document.getElementById('calendar').innerHTML=html;
+}
+function pickMonthDay(ds){document.getElementById('f_date').value=ds;refreshRecord();}
+
+/* 周 */
+let curWeekStart=weekStart(new Date());
+function shiftWeek(n){curWeekStart=addDays(curWeekStart,n*7);renderWeek()}
+function jumpWeek(v){if(v){curWeekStart=weekStart(parseDate(v));renderWeek()}}
+function renderWeek(){
+  const s=curWeekStart,e=addDays(s,6);
+  document.getElementById('weekRange').textContent=fmtDate(s)+' ~ '+fmtDate(e);
+  const days=[];let total=0,daysWith=0;
+  for(let i=0;i<7;i++){const d=addDays(s,i),ds=fmtDate(d);
+    const sum=records.filter(r=>r.date===ds).reduce((a,r)=>a+(r.duration||0),0);
+    if(sum>0)daysWith++;total+=sum;
+    days.push({label:['一','二','三','四','五','六','日'][i]+'\n'+pad(d.getDate()),value:sum,date:ds,
+      recs:records.filter(r=>r.date===ds)});}
+  document.getElementById('weekStats').innerHTML=`
+    <div class="stat"><div class="n">${daysWith}</div><div class="l">加班天数/7天</div></div>
+    <div class="stat am"><div class="n">${fmtDurShort(total)}<span style="font-size:12px;color:var(--sub)">h</span></div><div class="l">周总时长</div></div>
+    <div class="stat"><div class="n">${daysWith?fmtDurShort(total/daysWith):0}<span style="font-size:12px;color:var(--sub)">h</span></div><div class="l">加班日均</div></div>`;
+  document.getElementById('weekChart').innerHTML=barChart(days);
+  let rows='';
+  days.forEach(dy=>{dy.recs.sort((a,b)=>(a.start||'99').localeCompare(b.start||'99')).forEach(r=>{
+    rows+=`<tr><td>${dy.date}</td><td>${r.content}</td><td>${r.start&&r.end?r.start+'–'+r.end:'—'}</td><td class="num">${fmtDur(r.duration)}</td><td><button class="tbl-del" onclick="delRecord('${r.id}')">删除</button></td></tr>`;});});
+  document.getElementById('weekTable').innerHTML=rows?
+    `<div class="sec-title" style="margin:16px 2px 10px">本周明细</div><table><thead><tr><th>日期</th><th>内容</th><th>时间</th><th class="num">时长</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    :'<div class="empty" style="padding:20px">本周无记录</div>';
+}
+
+/* 月（统计视角：按月每日柱状） */
+function renderStatsMonth(){
+  const y=calY,m=calM;
+  const dim=new Date(y,m,0).getDate();const daily={};
+  for(let i=1;i<=dim;i++)daily[fmtDate(new Date(y,m-1,i))]=0;
+  records.filter(r=>{const d=parseDate(r.date);return d.getFullYear()===y&&d.getMonth()+1===m})
+    .forEach(r=>daily[r.date]+=(r.duration||0));
+  let total=0,daysWith=0;Object.values(daily).forEach(v=>{total+=v;if(v>0)daysWith++});
+  document.getElementById('monthStats').innerHTML=`
+    <div class="stat"><div class="n">${daysWith}</div><div class="l">加班天数</div></div>
+    <div class="stat am"><div class="n">${fmtDurShort(total)}<span style="font-size:12px;color:var(--sub)">h</span></div><div class="l">月总时长</div></div>
+    <div class="stat"><div class="n">${daysWith?fmtDurShort(total/daysWith):0}<span style="font-size:12px;color:var(--sub)">h</span></div><div class="l">加班日均</div></div>`;
+  const days=[];for(let i=1;i<=dim;i++){const ds=fmtDate(new Date(y,m-1,i));
+    days.push({label:String(i),value:daily[ds],date:ds,recs:records.filter(r=>r.date===ds)});}
+  document.getElementById('monthStatsChart').innerHTML=barChart(days);
+  let rows='';
+  days.forEach(dy=>{if(dy.value<=0)return;dy.recs.sort((a,b)=>(a.start||'99').localeCompare(b.start||'99')).forEach(r=>{
+    rows+=`<tr><td>${dy.date}</td><td>${r.content}</td><td>${r.start&&r.end?r.start+'–'+r.end:'—'}</td><td class="num">${fmtDur(r.duration)}</td><td><button class="tbl-del" onclick="delRecord('${r.id}')">删除</button></td></tr>`;});});
+  document.getElementById('monthTable').innerHTML=rows?
+    `<div class="sec-title" style="margin:16px 2px 10px">${m}月每日明细</div><table><thead><tr><th>日期</th><th>内容</th><th>时间</th><th class="num">时长</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    :'<div class="empty" style="padding:20px">本月无记录</div>';
+}
+
+/* 年 */
+function initYearSelector(){
+  const sel=document.getElementById('yearPick');const now=new Date().getFullYear();
+  const yrs=[...new Set(records.map(r=>parseDate(r.date).getFullYear()))];if(!yrs.includes(now))yrs.push(now);
+  sel.innerHTML=yrs.sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}年</option>`).join('');sel.value=now;
+}
+function renderYear(){
+  const y=+document.getElementById('yearPick').value;const months=[];let total=0,daysWith=0;
+  for(let m=1;m<=12;m++){let mt=0,md=0,fd=new Date(y,m-1,1),dim=new Date(y,m,0).getDate(),daily={};
+    for(let i=1;i<=dim;i++)daily[fmtDate(new Date(y,m-1,i))]=0;
+    records.filter(r=>{const d=parseDate(r.date);return d.getFullYear()===y&&d.getMonth()+1===m}).forEach(r=>daily[r.date]+=(r.duration||0));
+    Object.values(daily).forEach(v=>{mt+=v;if(v>0)md++});months.push({label:m+'月',value:mt,days:md});total+=mt;daysWith+=md;}
+  document.getElementById('yearStats').innerHTML=`
+    <div class="stat"><div class="n">${daysWith}</div><div class="l">全年加班天数</div></div>
+    <div class="stat am"><div class="n">${fmtDurShort(total)}<span style="font-size:12px;color:var(--sub)">h</span></div><div class="l">全年总时长</div></div>
+    <div class="stat"><div class="n">${(daysWith/365*100).toFixed(0)}<span style="font-size:12px;color:var(--sub)">%</span></div><div class="l">全年加班出勤率</div></div>`;
+  document.getElementById('yearChart').innerHTML=barChart(months);
+  let rows='';months.forEach((mo,i)=>{if(mo.value>0)rows+=`<tr><td>${i+1}月</td><td class="num">${mo.days}</td><td class="num"><b>${fmtDur(mo.value)}</b></td></tr>`});
+  document.getElementById('yearTable').innerHTML=rows?
+    `<div class="sec-title" style="margin:16px 2px 10px">分月明细</div><table><tbody>${rows}
+    <tr style="background:#eef4ff;color:var(--primary)"><th>全年合计</th><th class="num">${daysWith}</th><th class="num">${fmtDur(total)}</th></tr></tbody></table>`
+    :'<div class="empty" style="padding:20px">本年无记录</div>';
+}
+
+/* 柱状图 */
+function barChart(items){
+  const W=Math.min(900,Math.max(280,items.length*46)),H=240,padL=36,padR=10,padT=16,padB=44;
+  const cw=W-padL-padR,ch=H-padT-padB,n=items.length;
+  if(n===0)return'<div class="empty">暂无数据</div>';
+  const max=Math.max(1,...items.map(i=>i.value)),slot=cw/n,bw=Math.min(34,slot*0.62);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  for(let t=0;t<=4;t++){const val=max*t/4,y=padT+ch-(val/max)*ch;
+    svg+=`<line class="axis" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/><text x="${padL-5}" y="${y+4}" text-anchor="end" class="barlabel">${fmtDurShort(val)}</text>`;}
+  items.forEach((it,idx)=>{const cx=padL+slot*idx+slot/2,bx=cx-bw/2,h=(it.value/max)*ch,by=padT+ch-h;
+    svg+=`<rect x="${bx}" y="${by}" width="${bw}" height="${h}" rx="4" fill="${it.value>0?'url(#g)':'#eef0f3'}"/>`;
+    if(it.value>0)svg+=`<text x="${cx}" y="${by-5}" text-anchor="middle" class="barlabel" style="font-weight:800;fill:var(--primary)">${fmtDurShort(it.value)}</text>`;
+    it.label.split('\n').forEach((lb,k)=>svg+=`<text x="${cx}" y="${padT+ch+15+k*12}" text-anchor="middle" class="barlabel">${lb}</text>`);});
+  svg+=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8dff"/><stop offset="1" stop-color="#2f6df6"/></linearGradient></defs></svg>`;
+  return svg;
+}
+
+/* 导入导出 */
+function exportCSV(){
+  if(records.length===0){toast('还没有记录可导出');return;}
+  const head=['日期','开始','结束','时长(小时)','时长(时分)','内容'];
+  const rows=records.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||''))
+    .map(r=>[r.date,r.start||'',r.end||'',(r.duration||0).toFixed(2),fmtDur(r.duration||0),r.content||'']);
+  const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const csv='\uFEFF'+head.join(',')+'\n'+rows.map(r=>r.map(esc).join(',')).join('\n');
+  const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='加班记录_'+todayStr()+'.csv';a.click();toast('已导出CSV');
+}
+function exportData(){const b=new Blob([JSON.stringify(records,null,2)],{type:'application/json'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='加班记录_'+todayStr()+'.json';a.click();toast('已备份')}
+function importData(){document.getElementById('fileInput').click()}
+function handleImport(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const data=JSON.parse(rd.result);if(!Array.isArray(data))throw 0;
+    if(!confirm('导入将合并到现有数据，继续？')){e.target.value='';return;}
+    let n=0;data.forEach(r=>{if(r&&r.date&&r.content){if(!r.id)r.id=uid();if(!records.some(x=>x.id===r.id)){records.push(r);n++}}});
+    save();refreshRecord();renderStatsCurrent();toast('已导入 '+n+' 条');}catch(err){toast('文件格式不对')}e.target.value='';};
+  rd.readAsText(f);}
+function loadSample(){
+  if(records.length&&!confirm('将追加一批示例数据（可随时删），继续？'))return;
+  const b=weekStart(new Date());
+  [[0,'18:30','21:00','处理工信部投诉工单'],[0,'21:00','22:30','写网格周报'],[1,'19:00','22:00','存量用户外呼'],
+   [2,'18:00','20:30','营业厅值班'],[3,'19:30','23:00','季度指标冲刺'],[4,'18:30','21:30','下网格拜访'],
+   [6,'14:00','18:00','周末整理台账']].forEach(([o,s,e,c])=>{const d=addDays(b,o);
+    records.push({id:uid(),date:fmtDate(d),start:s,end:e,duration:Math.round(calcDuration(s,e)*100)/100,content:c,note:''});});
+  save();refreshRecord();renderStatsCurrent();toast('已填充示例');
+}
+function clearAll(){
+  if(!confirm('确定清空全部加班记录？此操作不可恢复（建议先备份）'))return;
+  records=[];save();refreshRecord();renderStatsCurrent();toast('已清空');
+}
+
+/* 导航 */
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id==='tab-'+t));
+  document.querySelectorAll('.tabbar .tb').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  // LeiBox 玻璃选中块：按 Tab 顺序滑动到对应位置
+  document.getElementById('tabIndicator').style.setProperty('--tab-i',Math.max(0,['record','stats','data'].indexOf(t)));
+  if(t==='record')refreshRecord();
+  if(t==='stats'){if(!document.querySelector('.subseg button.active'))switchSub('week');renderStatsCurrent();}
+  window.scrollTo({top:0});
+}
+function switchSub(s){
+  document.querySelectorAll('.subseg button').forEach(b=>b.classList.toggle('active',b.dataset.sub===s));
+  ['week','month','year'].forEach(x=>document.getElementById('sub-'+x).style.display=x===s?'block':'none');
+  if(s==='week')renderWeek();
+  if(s==='month')renderStatsMonth();
+  if(s==='year'){initYearSelector();renderYear();}
+}
+function renderStatsCurrent(){
+  if(document.getElementById('tab-stats').classList.contains('active')){
+    const s=document.querySelector('.subseg button.active').dataset.sub;
+    if(s==='week')renderWeek();if(s==='month')renderStatsMonth();if(s==='year')renderYear();
+  }
+}
+
+/* 初始化 */
+function init(){
+  timer=loadTimer(); // 刷新页面后接着计时（靠绝对时间戳，不靠累加）
+  document.getElementById('f_date').value=todayStr();
+  document.getElementById('weekJump').value=todayStr();
+  refreshRecord();
+  renderTimerUI();
+  if(timer)startTick();
+}
+/* 多标签页同步：别的标签开始/结束计时或改了记录，这里跟着刷新 */
+window.addEventListener('storage',e=>{
+  if(e.key===TIMER_KEY){
+    timer=loadTimer();
+    if(timer)startTick();
+    else{stopTick();renderRing(document.getElementById('f_date').value||todayStr())}
+    renderTimerUI();
+  }
+  if(e.key===STORE_KEY){records=load();refreshRecord();renderStatsCurrent()}
+});
+init();
+</script>
+</body>
+</html>
