@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Typography } from 'antd';
 import { useAppContext } from '../../context.js';
 import {
   hourAngle, polar, arcPath, fmtDur,
@@ -115,11 +116,11 @@ export default function OvertimeRing() {
         </text>
       </svg>
 
-      <div className="ring-hint">
+      <Typography.Text type="secondary" className="ring-hint">
         {hover
           ? `${hover.start}-${hover.end} · ${hover.content} · ${fmtDur(hover.duration)}`
           : (running ? '蓝色为已记录时段，琥珀为本次计时' : '把鼠标移到蓝色弧上看那一笔干了啥')}
-      </div>
+      </Typography.Text>
     </div>
   );
 }

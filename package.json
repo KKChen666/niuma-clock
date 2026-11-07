@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/logic/__tests__/logic.test.mjs"
+    "test": "node --test src/logic/__tests__/logic.test.mjs",
+    "check:ui": "node scripts/check-ui.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.2",

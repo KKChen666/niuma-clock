@@ -1,4 +1,4 @@
-import { Button, Tag, Space } from 'antd';
+import { Button, Badge, Space, Divider, Typography } from 'antd';
 import { PlayCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context.js';
 import { isTooShort, needsCancelConfirm, finishDraft, formatClock } from '../../logic/index.js';
@@ -33,29 +33,34 @@ export default function TimerControl() {
     });
   };
 
-  if (!running) {
-    return (
-      <div className="timer-control">
-        <Button type="primary" icon={<PlayCircleOutlined />} onClick={start} block size="large">
-          开始计时
-        </Button>
-        <div className="timer-tip">开始后不用手填时间，结束时会自动回填到「记一笔」</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="timer-control is-running">
-      <div className="timer-status">
-        <Tag color="orange">计时中</Tag>
-        <span className="timer-clock">{formatClock(elapsed)}</span>
+    <>
+      <Divider className="timer-divider" />
+      <div className={`timer-control ${running ? 'is-running' : ''}`}>
+        {!running ? (
+          <>
+            <Button type="primary" icon={<PlayCircleOutlined />} onClick={start} block size="large">
+              开始计时
+            </Button>
+            <Typography.Text type="secondary" className="timer-tip">
+              开始后不用手填时间，结束时会自动回填到「记一笔」
+            </Typography.Text>
+          </>
+        ) : (
+          <>
+            <div className="timer-status">
+              <Badge status="processing" text="计时中" />
+              <span className="timer-clock">{formatClock(elapsed)}</span>
+            </div>
+            <Space.Compact block>
+              <Button type="primary" icon={<CheckOutlined />} onClick={onFinish} className="btn-finish">
+                结束计时
+              </Button>
+              <Button icon={<CloseOutlined />} onClick={onCancel}>取消</Button>
+            </Space.Compact>
+          </>
+        )}
       </div>
-      <Space.Compact block>
-        <Button type="primary" icon={<CheckOutlined />} onClick={onFinish} className="btn-finish">
-          结束计时
-        </Button>
-        <Button icon={<CloseOutlined />} onClick={onCancel}>取消</Button>
-      </Space.Compact>
-    </div>
+    </>
   );
 }

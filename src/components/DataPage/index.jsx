@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Card, Button, Statistic, Upload } from 'antd';
+import { Card, Button, Statistic, Upload, Alert, Descriptions, Popconfirm, Typography } from 'antd';
 import { DownloadOutlined, UploadOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context.js';
 import { RECORDS_KEY, toCSV, toBackupJSON, mergeImport, fmtDur, todayStr } from '../../logic/index.js';
@@ -7,7 +7,7 @@ import { downloadText } from '../../utils/download.js';
 import { buildSampleRecords } from '../../utils/sample.js';
 
 export default function DataPage() {
-  const { records, replaceAll, message, modal } = useAppContext();
+  const { records, replaceAll, message } = useAppContext();
 
   const info = useMemo(() => {
     const total = records.reduce((a, r) => a + (r.duration || 0), 0);
@@ -53,30 +53,27 @@ export default function DataPage() {
   };
 
   const onClear = () => {
-    modal.confirm({
-      title: '清空全部记录？',
-      content: `当前共 ${records.length} 笔记录。清空后仍可撤销一次，稳妥起见建议先导出 JSON 备份。`,
-      okText: '清空',
-      okButtonProps: { danger: true },
-      cancelText: '再想想',
-      onOk: () => {
-        const snapshot = records;
-        replaceAll([]);
-        const key = 'undo-clear';
-        message.open({
-          key,
-          type: 'warning',
-          duration: 10,
-          content: '已清空全部记录',
-          btn: (
-            <Button size="small" type="link" onClick={() => { replaceAll(snapshot); message.destroy(key); }}>
-              撤销
-            </Button>
-          )
-        });
-      }
+    const snapshot = records;
+    replaceAll([]);
+    const key = 'undo-clear';
+    message.open({
+      key,
+      type: 'warning',
+      duration: 10,
+      content: '已清空全部记录',
+      btn: (
+        <Button size="small" type="link" onClick={() => { replaceAll(snapshot); message.destroy(key); }}>
+          撤销
+        </Button>
+      )
     });
   };
+
+  const overviewItems = [
+    { key: 'range', label: '日期范围', children: `${info.first} ~ ${info.last}` },
+    { key: 'total', label: '合计', children: fmtDur(info.total) },
+    { key: 'bytes', label: '本地占用', children: `约 ${(info.bytes / 1024).toFixed(1)} KB` }
+  ];
 
   return (
     <div className="page">
@@ -89,10 +86,7 @@ export default function DataPage() {
             <Statistic title="累计加班" value={info.total} precision={2} suffix="h" />
           </Card>
         </div>
-        <div className="data-note">
-          日期范围：{info.first} ~ {info.last}<br />
-          合计：{fmtDur(info.total)} · 本地占用约 {(info.bytes / 1024).toFixed(1)} KB
-        </div>
+        <Descriptions className="data-desc" size="small" column={1} items={overviewItems} />
       </Card>
 
       <Card className="panel" size="small" title="导入导出">
@@ -105,17 +99,34 @@ export default function DataPage() {
             <Button icon={<UploadOutlined />} block>从 JSON 备份恢复</Button>
           </Upload>
           <Button icon={<PlusOutlined />} onClick={onSample} block>填充示例数据</Button>
-          <Button danger icon={<DeleteOutlined />} onClick={onClear} block>清空全部</Button>
+          <Popconfirm
+            title="清空全部记录？"
+            description={`当前共 ${records.length} 笔。清空后仍可撤销一次，稳妥起见建议先导出 JSON 备份。`}
+            okText="清空"
+            okButtonProps={{ danger: true }}
+            cancelText="再想想"
+            placement="topRight"
+            onConfirm={onClear}
+          >
+            <Button danger icon={<DeleteOutlined />} block>清空全部</Button>
+          </Popconfirm>
         </div>
       </Card>
 
       <Card className="panel" size="small" title="关于数据">
-        <div className="data-note">
-          所有记录只存在当前浏览器的 localStorage（键 <code>{RECORDS_KEY}</code>），没有账号、没有后端、不会上传。
-          换浏览器、清缓存、无痕模式都会丢，重要数据请定期导出 JSON 备份。<br />
-          本工具沿用旧版的存储键，旧版里已经记过的数据打开即接管，不需要迁移。
-          CSV 固定 6 列以兼容旧版；备注字段完整保留在 JSON 备份里。
-        </div>
+        <Alert
+          type="info"
+          showIcon
+          message="数据只存本机"
+          description={
+            <Typography.Paragraph className="data-note">
+              所有记录只存在当前浏览器的 localStorage（键 <Typography.Text code>{RECORDS_KEY}</Typography.Text>），
+              没有账号、没有后端、不会上传。换浏览器、清缓存、无痕模式都会丢，重要数据请定期导出 JSON 备份。<br />
+              本工具沿用旧版的存储键，旧版里已经记过的数据打开即接管，不需要迁移。
+              CSV 固定 6 列以兼容旧版；备注字段完整保留在 JSON 备份里。
+            </Typography.Paragraph>
+          }
+        />
       </Card>
     </div>
   );

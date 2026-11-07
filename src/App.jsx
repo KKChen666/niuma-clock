@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { App as AntdApp, Button } from 'antd';
+import { App as AntdApp, Button, Avatar, Typography } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
 import { AppContext } from './context.js';
 import { useRecords } from './hooks/useRecords.js';
@@ -72,9 +72,9 @@ function Root() {
       <div className="app-shell">
         <header className="app-header">
           <div className="brand">
-            <ClockCircleOutlined className="brand-icon" />
-            <span className="brand-name">牛马时钟</span>
-            <span className="brand-sub">加班统计 · 数据只存本机</span>
+            <Avatar className="brand-avatar" shape="square" size={30} icon={<ClockCircleOutlined />} />
+            <Typography.Text strong className="brand-name">牛马时钟</Typography.Text>
+            <Typography.Text type="secondary" className="brand-sub">加班统计 · 数据只存本机</Typography.Text>
           </div>
         </header>
         <main className="app-main">

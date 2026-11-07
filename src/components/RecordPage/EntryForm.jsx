@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Form, Input, InputNumber, AutoComplete, DatePicker, TimePicker,
-  Segmented, Button, Card, Space, Tag
+  Segmented, Button, Card, Space, Tag, Alert, Typography
 } from 'antd';
 import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -168,40 +168,61 @@ export default function EntryForm() {
           )}
 
           <div className="chip-row">
-            <span className="chip-label">快捷</span>
+            <Typography.Text type="secondary" className="chip-label">快捷</Typography.Text>
             <Space size={4} wrap>
               {CHIPS.map(v => (
-                <Button key={v} size="small" onClick={() => { switchMode('manual'); setManual(v); }}>
+                <Tag.CheckableTag
+                  key={v}
+                  checked={mode === 'manual' && manual === v}
+                  onChange={(checked) => {
+                    if (!checked) { setManual(null); return; }
+                    switchMode('manual');
+                    setManual(v);
+                  }}
+                >
                   {v}h
-                </Button>
+                </Tag.CheckableTag>
               ))}
             </Space>
           </div>
 
-          <div className={`dur-preview ${preview > 0 ? 'has-value' : ''}`}>
-            本次 <strong>{Number(preview.toFixed(2))}h</strong>
-            <span className="dur-text">· {fmtDur(preview)}</span>
-            {start && end && <span className="dur-text"> · {start}-{end}</span>}
-          </div>
-          {tip && <div className="draft-tip">{tip}</div>}
+          <Alert
+            className={`dur-preview ${preview > 0 ? 'has-value' : ''}`}
+            type={preview > 0 ? 'info' : undefined}
+            showIcon={false}
+            message={
+              <span>
+                本次 <strong>{Number(preview.toFixed(2))}h</strong>
+                <span className="dur-text">· {fmtDur(preview)}</span>
+                {start && end && <span className="dur-text"> · {start}-{end}</span>}
+              </span>
+            }
+          />
+          {tip && <Alert className="draft-tip" type="warning" showIcon message={tip} />}
 
           <Form.Item label="工作内容">
             <AutoComplete
               value={content}
-              onChange={setContent}
+              onChange={v => setContent(String(v).slice(0, 120))}
               options={recent.map(v => ({ value: v }))}
               placeholder="今天又加了啥"
             >
-              <Input ref={contentRef} maxLength={120} allowClear />
+              <Input ref={contentRef} allowClear />
             </AutoComplete>
           </Form.Item>
 
           {recent.length > 0 && (
             <div className="chip-row recent-row">
-              <span className="chip-label">常用</span>
+              <Typography.Text type="secondary" className="chip-label">常用</Typography.Text>
               <Space size={4} wrap>
                 {recent.slice(0, 4).map(c => (
-                  <Tag key={c} className="recent-tag" onClick={() => setContent(c)}>{c}</Tag>
+                  <Tag.CheckableTag
+                    key={c}
+                    checked={content === c}
+                    onChange={(checked) => setContent(checked ? c : '')}
+                  >
+                    {c}
+                  </Tag.CheckableTag>
                 ))}
               </Space>
             </div>

@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Card, Segmented, DatePicker, Statistic, Table, Button } from 'antd';
+import {
+  Card, Segmented, DatePicker, Statistic, Table, Button,
+  Progress, Empty, Tooltip, Typography
+} from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAppContext } from '../../context.js';
@@ -7,6 +10,8 @@ import { weekSummary, monthSummary, yearSummary, fmtDur } from '../../logic/inde
 import BarChart from '../BarChart.jsx';
 
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
+
+const emptyTable = <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="这段时间还没记" />;
 
 export default function StatsPage() {
   const { records, removeWithUndo } = useAppContext();
@@ -95,13 +100,30 @@ export default function StatsPage() {
             <Statistic title="加班天数" value={data.daysWith} suffix="天" />
           </Card>
           <Card size="small" className="stat-card">
-            <Statistic title="日均（有记录天）" value={data.perDay} precision={2} suffix="h" />
+            <Statistic
+              title={
+                <Tooltip title="总时长 ÷ 有记录天数，不是 ÷ 7 / 30 / 365">
+                  <span className="stat-help">日均（有记录天）</span>
+                </Tooltip>
+              }
+              value={data.perDay}
+              precision={2}
+              suffix="h"
+            />
           </Card>
         </div>
         {view === 'year' && (
           <div className="ratio-line">
-            全年 <b>{data.daysWith}</b> 天有加班，占全年 <b>{Number(data.daysRatio.toFixed(1))}%</b>
-            <span className="muted"> （旧版误称「出勤率」，现已改名）</span>
+            <Typography.Text type="secondary">
+              全年 <b>{data.daysWith}</b> 天有加班（旧版误称「出勤率」，现已改名）
+            </Typography.Text>
+            <Progress
+              percent={Number(data.daysRatio.toFixed(1))}
+              size="small"
+              strokeColor="var(--primary)"
+              trailColor="#eef2f9"
+              format={p => `${p}%`}
+            />
           </div>
         )}
         <BarChart data={data.bars} />
@@ -116,11 +138,12 @@ export default function StatsPage() {
             dataSource={data.months}
             columns={monthColumns}
             scroll={{ x: 320 }}
+            locale={{ emptyText: emptyTable }}
           />
         </Card>
       )}
 
-      <Card className="panel" size="small" title="明细" extra={<span className="muted">{list.length} 笔</span>}>
+      <Card className="panel" size="small" title="明细" extra={<Typography.Text type="secondary" className="muted">{list.length} 笔</Typography.Text>}>
         <div className="table-scroll">
           <Table
             size="small"
@@ -129,7 +152,7 @@ export default function StatsPage() {
             columns={columns}
             pagination={{ pageSize: 8, size: 'small', showSizeChanger: false }}
             scroll={{ x: 620 }}
-            locale={{ emptyText: '这段时间还没记' }}
+            locale={{ emptyText: emptyTable }}
           />
         </div>
       </Card>

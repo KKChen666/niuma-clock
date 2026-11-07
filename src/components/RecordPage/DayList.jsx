@@ -1,4 +1,4 @@
-import { Card, List, Button, Empty } from 'antd';
+import { Card, List, Button, Empty, Tooltip, Typography } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context.js';
 import { fmtDur } from '../../logic/index.js';
@@ -12,7 +12,7 @@ export default function DayList() {
       className="panel"
       size="small"
       title={`${selectedDate} 明细`}
-      extra={<span className="muted">{detail.records.length} 笔 · 共 {fmtDur(detail.total)}</span>}
+      extra={<Typography.Text type="secondary" className="muted">{detail.records.length} 笔 · 共 {fmtDur(detail.total)}</Typography.Text>}
     >
       {detail.records.length === 0 ? (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="这天还没记，挺好" />
@@ -22,8 +22,12 @@ export default function DayList() {
           renderItem={r => (
             <List.Item
               actions={[
-                <Button key="edit" type="text" icon={<EditOutlined />} onClick={() => setEditing(r)} aria-label="编辑" />,
-                <Button key="del" type="text" danger icon={<DeleteOutlined />} onClick={() => removeWithUndo(r.id)} aria-label="删除" />
+                <Tooltip title="编辑这笔" key="edit">
+                  <Button type="text" icon={<EditOutlined />} onClick={() => setEditing(r)} aria-label="编辑" />
+                </Tooltip>,
+                <Tooltip title="删除（可撤销）" key="del">
+                  <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeWithUndo(r.id)} aria-label="删除" />
+                </Tooltip>
               ]}
             >
               <List.Item.Meta

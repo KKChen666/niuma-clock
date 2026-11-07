@@ -1,4 +1,4 @@
-import { Card, Statistic } from 'antd';
+import { Card, Statistic, Typography } from 'antd';
 import { useAppContext } from '../../context.js';
 import { overview } from '../../logic/index.js';
 import CalendarPanel from './CalendarPanel.jsx';
@@ -28,7 +28,7 @@ export default function RecordPage() {
         className="panel"
         size="small"
         title="24 小时圆环"
-        extra={<span className="muted">{calendar.selectedDate}</span>}
+        extra={<Typography.Text type="secondary" className="muted">{calendar.selectedDate}</Typography.Text>}
       >
         <OvertimeRing />
         <TimerControl />
