@@ -143,11 +143,12 @@ export default function EntryForm() {
 
           {mode === 'range' ? (
             <Form.Item label="开始 - 结束">
+              {/* 分钟必须 00-59 全可选，别改成 5 之类的步长 */}
               <TimePicker.RangePicker
                 value={range}
                 onChange={(vals) => setRange(vals)}
                 format="HH:mm"
-                minuteStep={5}
+                minuteStep={1}
                 placeholder={['开始', '结束']}
                 style={{ width: '100%' }}
               />

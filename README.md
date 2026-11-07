@@ -99,7 +99,7 @@ npm run check:single   # 建议跑一次，确认双击能用
 2. **旧数据不会自己跟过来**。换成新文件 / 换浏览器 / 换网址，就是换了一个存储源。要带数据过去：先在旧版点「JSON 备份」导出，再到新版「数据页 → 导入恢复」。CSV 只能拿去 Excel 看，回灌不了。
 3. **别发 `dist/` 文件夹**。常规构建产物是 `<script type="module" src="./assets/...">`，浏览器在 `file://` 下会用 CORS 拦掉，双击必白屏；它只能通过 HTTP 服务访问。要离线分发就用 `dist-single/` 那个单文件。
 
-`npm run check:single` 会用本机 Chrome/Edge 以 `file://` 真开一次，断言：目录里只有一个 HTML、零外部引用、React 挂载成功（月历 / 导航 / 统计卡都在）、`localStorage` 可读写。找不到浏览器时会跳过实测、只做静态检查，可用 `CHROME_PATH` 指定路径。`dist-single/` 是构建产物，已 gitignore，不入库。
+`npm run check:single` 会用本机 Chrome/Edge 以 `file://` 真开一次，断言：目录里只有一个 HTML、零外部引用、React 挂载成功（月历 / 导航 / 统计卡都在）、`localStorage` 可读写、时间面板分钟列 00–59 共 60 项。找不到浏览器时会跳过实测、只做静态检查，可用 `CHROME_PATH` 指定路径。`dist-single/` 是构建产物，已 gitignore，不入库。
 
 ## 本次重构显式改的三处口径（已确认）
 

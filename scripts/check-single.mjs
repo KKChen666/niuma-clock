@@ -112,6 +112,41 @@ try {
     /<div id="r">([^<]*)<\/div>/.exec(probeDom)?.[1] || '无输出');
   rmSync(probePath, { force: true });
   rmSync(join(smokeDir, 'check-profile-probe'), { recursive: true, force: true });
+
+  // 时间面板分钟列探针：注入脚本点开 RangePicker，把分钟项写进 DOM
+  // 防止有人把 minuteStep 改回 5，面板又只剩 00/05/10...
+  const minutesPath = join(outDir, '__minutes.html');
+  const injected = html.replace('</body>', `<script>
+setTimeout(function () {
+  var i = Array.prototype.find.call(document.querySelectorAll('.ant-picker-input input'), function (x) { return x.placeholder === '开始'; });
+  var p = i && i.closest('.ant-picker');
+  if (i && p) {
+    i.focus();
+    ['mousedown', 'mouseup', 'click'].forEach(function (t) {
+      i.dispatchEvent(new MouseEvent(t, { bubbles: true }));
+      p.dispatchEvent(new MouseEvent(t, { bubbles: true }));
+    });
+  }
+  setTimeout(function () {
+    var cols = document.querySelectorAll('.ant-picker-time-panel-column');
+    var mins = cols[1] ? Array.prototype.map.call(cols[1].querySelectorAll('li'), function (li) { return li.textContent.trim(); }) : [];
+    var d = document.createElement('div');
+    d.id = 'minutes-probe';
+    d.textContent = 'MINUTES:' + mins.length + ':' + mins.join(',');
+    document.body.appendChild(d);
+  }, 800);
+}, 2000);
+</script></body>`);
+  writeFileSync(minutesPath, injected, 'utf8');
+  const minutesRun = chromeRun(chrome, join(smokeDir, 'check-profile-minutes'), pathToFileURL(minutesPath).href, 10000);
+  const minutesDom = minutesRun.stdout || '';
+  const m = /<div id="minutes-probe">MINUTES:(\d+):([^<]*)<\/div>/.exec(minutesDom);
+  const mins = m ? m[2].split(',') : [];
+  const expected = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  check('时间面板分钟 00-59 共 60 项', mins.length === 60 && expected.every((v, i) => mins[i] === v),
+    m ? `${mins.length} 项，首 ${mins[0]} 末 ${mins[mins.length - 1]}` : '面板未打开');
+  rmSync(minutesPath, { force: true });
+  rmSync(join(smokeDir, 'check-profile-minutes'), { recursive: true, force: true });
 }
 
 console.log(`\nRESULT: ${failures === 0 ? 'PASS ✅' : `FAIL ❌ (${failures} 项)`}`);
