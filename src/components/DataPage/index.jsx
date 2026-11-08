@@ -5,6 +5,7 @@ import { useAppContext } from '../../context.js';
 import { RECORDS_KEY, toCSV, toBackupJSON, mergeImport, fmtDur, todayStr } from '../../logic/index.js';
 import { downloadText } from '../../utils/download.js';
 import { buildSampleRecords } from '../../utils/sample.js';
+import { OfficeBanner } from '../BrandArt.jsx';
 
 export default function DataPage() {
   const { records, replaceAll, message } = useAppContext();
@@ -114,6 +115,7 @@ export default function DataPage() {
       </Card>
 
       <Card className="panel" size="small" title="关于数据">
+        <OfficeBanner />
         <Alert
           type="info"
           showIcon

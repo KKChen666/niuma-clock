@@ -2,6 +2,8 @@ import { Button, Badge, Space, Divider, Typography } from 'antd';
 import { PlayCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context.js';
 import { isTooShort, needsCancelConfirm, finishDraft, formatClock } from '../../logic/index.js';
+import { horseImg } from '../BrandArt.jsx';
+import { celebrate } from '../../utils/celebrate.js';
 
 export default function TimerControl() {
   const { timer, message, modal, finishTimer } = useAppContext();
@@ -18,6 +20,7 @@ export default function TimerControl() {
     const d = finishDraft(state, new Date(now));
     finishTimer(d);
     clear();
+    celebrate('这班加完了，记一笔');
     message.success(`已计时 ${d.clock}，补一句工作内容就能保存`);
   };
 
@@ -49,8 +52,11 @@ export default function TimerControl() {
         ) : (
           <>
             <div className="timer-status">
-              <Badge status="processing" text="计时中" />
-              <span className="timer-clock">{formatClock(elapsed)}</span>
+              <img src={horseImg} className="timer-mascot" alt="" />
+              <div className="timer-status-text">
+                <Badge status="processing" text="加班中，牛马陪你熬" />
+                <span className="timer-clock">{formatClock(elapsed)}</span>
+              </div>
             </div>
             <Space.Compact block>
               <Button type="primary" icon={<CheckOutlined />} onClick={onFinish} className="btn-finish">

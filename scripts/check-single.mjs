@@ -74,6 +74,11 @@ const external = [...html.matchAll(/<(?:script|link)[^>]*\b(?:src|href)="([^"]+)
   .filter(v => !v.startsWith('#') && !v.startsWith('data:'));
 check('无外部 JS/CSS 引用', external.length === 0, external.join(', ') || '全部内联');
 check('JS 与 CSS 均已内联', html.includes('<script type="module"') && html.includes('<style'));
+// 品牌插画：老板手绘的三张牛马图必须内联成 data URI，离线双击才不会缺图
+const remoteImgs = [...html.matchAll(/<img[^>]*\bsrc="(https?:\/\/|\.\/|\/)[^"]*"/g)].map(m => m[1]);
+check('品牌插画已内联（无外链图片）',
+  html.includes('data:image/jpeg;base64,') && remoteImgs.length === 0,
+  remoteImgs.length ? remoteImgs.join(', ') : '全部为 data URI');
 console.log(`  产物体积: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB`);
 
 // 2 & 3. 浏览器实测

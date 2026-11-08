@@ -1,7 +1,8 @@
-import { Card, List, Button, Empty, Tooltip, Typography } from 'antd';
+import { Card, List, Button, Tooltip, Typography } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context.js';
 import { fmtDur } from '../../logic/index.js';
+import { EmptyArt } from '../BrandArt.jsx';
 
 export default function DayList() {
   const { calendar, removeWithUndo, setEditing } = useAppContext();
@@ -15,7 +16,7 @@ export default function DayList() {
       extra={<Typography.Text type="secondary" className="muted">{detail.records.length} 笔 · 共 {fmtDur(detail.total)}</Typography.Text>}
     >
       {detail.records.length === 0 ? (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="这天还没记，挺好" />
+        <EmptyArt />
       ) : (
         <List
           dataSource={detail.records}

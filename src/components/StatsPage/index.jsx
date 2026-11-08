@@ -1,17 +1,25 @@
 import { useMemo, useState } from 'react';
 import {
   Card, Segmented, DatePicker, Statistic, Table, Button,
-  Progress, Empty, Tooltip, Typography
+  Progress, Tooltip, Typography
 } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAppContext } from '../../context.js';
 import { weekSummary, monthSummary, yearSummary, fmtDur } from '../../logic/index.js';
 import BarChart from '../BarChart.jsx';
+import { EmptyArt, sceneImg } from '../BrandArt.jsx';
 
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
 
-const emptyTable = <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="这段时间还没记" />;
+const emptyTable = (
+  <EmptyArt
+    compact
+    image={sceneImg}
+    title="这段时间还没记"
+    sub="趁着没加班，赶紧歇会儿"
+  />
+);
 
 export default function StatsPage() {
   const { records, removeWithUndo } = useAppContext();

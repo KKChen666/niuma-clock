@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { App as AntdApp, Button, Avatar, Typography } from 'antd';
-import { ClockCircleOutlined } from '@ant-design/icons';
+import { App as AntdApp, Button, Typography } from 'antd';
 import { AppContext } from './context.js';
 import { useRecords } from './hooks/useRecords.js';
 import { useTimer } from './hooks/useTimer.js';
 import { useCalendar } from './hooks/useCalendar.js';
 import BottomTabs from './components/BottomTabs.jsx';
+import { CowAvatar } from './components/BrandArt.jsx';
 import RecordPage from './components/RecordPage/index.jsx';
 import StatsPage from './components/StatsPage/index.jsx';
 import DataPage from './components/DataPage/index.jsx';
@@ -72,9 +72,11 @@ function Root() {
       <div className="app-shell">
         <header className="app-header">
           <div className="brand">
-            <Avatar className="brand-avatar" shape="square" size={30} icon={<ClockCircleOutlined />} />
-            <Typography.Text strong className="brand-name">牛马时钟</Typography.Text>
-            <Typography.Text type="secondary" className="brand-sub">加班统计 · 数据只存本机</Typography.Text>
+            <CowAvatar size={42} />
+            <div className="brand-copy">
+              <Typography.Text className="brand-name">牛马时钟</Typography.Text>
+              <Typography.Text type="secondary" className="brand-sub">加班统计 · 数据只存本机</Typography.Text>
+            </div>
           </div>
         </header>
         <main className="app-main">

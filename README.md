@@ -12,6 +12,7 @@
 | 记录页（月历 / 圆环 / 计时 / 记一笔 / 明细） | ✅ 已实现 |
 | 统计页（周 / 月 / 年） | ✅ 已实现 |
 | 数据页（CSV / JSON / 示例 / 清空） | ✅ 已实现 |
+| 主题「深蓝办公室」+ 原创牛马形象 | ✅ 已落地（深蓝 `#2F4A6B` 主色 / 暖棕 `#B5764A` 强调，5 处插画落点） |
 | `npm run build` | ✅ 通过（常规静态站点） |
 | `npm run build:single` | ✅ 单文件离线版，`file://` 双击实测通过 |
 | 旧版源码 `reference/` | ✅ 只读参照，未改动 |
@@ -29,6 +30,7 @@ npm run build        # 生产构建到 dist/（需 HTTP 服务才能打开）
 npm run build:single # 单文件离线版 → dist-single/牛马时钟.html（可直接双击 / 转发）
 npm run check:single # 验证单文件：无外部引用 + file:// 不白屏 + localStorage 可写
 npm run preview      # 预览构建产物
+python scripts/build-assets.py   # 换素材后重新生成 src/assets/brand.js（需 Pillow）
 ```
 
 ## 目录
@@ -43,7 +45,12 @@ npm run preview      # 预览构建产物
 │   └── 02-旧版踩坑清单.md         旧版 bug、口径陷阱、本次处理结果
 ├── scripts/
 │   ├── check-ui.mjs               静态渲染冒烟（Vite ssrLoadModule + renderToString）
-│   └── check-single.mjs           单文件离线版回归（产物 / file:// DOM / localStorage）
+│   ├── check-single.mjs           单文件离线版回归（产物 / file:// DOM / localStorage）
+│   └── build-assets.py            品牌图压缩 + 近景裁切 → 生成 base64 模块（需 Pillow）
+├── assets/
+│   ├── clean/                     ★ 老板手绘、已手工去水印的三张原图（2048×2048）
+│   └── orig/                      最早带「豆包 AI 生成」水印的版本，仅留档，不要用于构建
+├── src/assets/brand.js            自动生成，勿手改；全部图片为 data URI
 ├── dist-single/                   单文件离线版构建产物（已 gitignore，不入库）
 │   └── 牛马时钟.html               ★ 直接转发给别人的就是这一个文件
 ├── reference/                     旧版完整源码，只读参照，不要 import
@@ -58,8 +65,9 @@ npm run preview      # 预览构建产物
     │   ├── index.js               统一出口，React 层只从这里 import
     │   └── __tests__/logic.test.mjs
     ├── hooks/                     useRecords / useTimer / useCalendar
-    ├── utils/                     download.js / sample.js
+    ├── utils/                     download.js / sample.js / celebrate.js
     └── components/
+        ├── BrandArt.jsx           形象落点（CowAvatar / EmptyArt / OfficeBanner）
         ├── BottomTabs.jsx  BarChart.jsx
         ├── RecordPage/            CalendarPanel / OvertimeRing / TimerControl / EntryForm / DayList
         ├── StatsPage/             周 / 月 / 年聚合 + 图表 + 明细表
@@ -68,7 +76,7 @@ npm run preview      # 预览构建产物
 
 ## 三个页面
 
-- **记录页**：本周 / 本月累计；官方 `Calendar` 月历（`fullCellRender` 完整替换单元格）带农历、按时长深浅着色、`Badge` 红点标 >8h、今天高亮，标题点开是「月 → 年」递进选择；24 小时 SVG 圆环（蓝色时段弧 + 红色当前指针）；实时计时（琥珀弧 + 内圈分钟环 + 中央秒表）；记一笔表单；当天明细可编辑、删除后能撤销。
+- **记录页**：本周 / 本月累计；官方 `Calendar` 月历（`fullCellRender` 完整替换单元格）带农历、按深蓝深浅着色、暖棕 `Badge` 标 >8h、今天高亮，标题点开是「月 → 年」递进选择；24 小时 SVG 圆环（深蓝时段弧 + 暖红当前指针）；实时计时（琥珀弧 + 内圈分钟环 + 中央秒表 + 摇摆马头）；记一笔表单；当天明细可编辑、删除后能撤销。
 - **统计页**：周 / 月 / 年切换，柱状图 + 总时长 / 加班天数 / 日均三数字，明细表可删；年视图另有分月表和「加班天数占比」。
 - **数据页**：CSV 导出（BOM）、JSON 备份 / 恢复（按 id 去重合并）、填充示例数据、清空全部（二次确认 + 可撤销）。
 
@@ -88,7 +96,7 @@ npm run build:single   # 产出 dist-single/牛马时钟.html
 npm run check:single   # 建议跑一次，确认双击能用
 ```
 
-`牛马时钟.html` 约 1.3MB，JS、CSS、图标全内联，**一个文件就是完整应用**。微信、邮件、U 盘随便发，对方不用装 Node、不用起服务、不用联网：
+`牛马时钟.html` 约 1.7MB，JS、CSS、图标、**三张原创牛马插画**全内联成 data URI，**一个文件就是完整应用**。微信、邮件、U 盘随便发，对方不用装 Node、不用起服务、不用联网：
 
 - **电脑**：存到本地，双击用 Chrome / Edge 打开。
 - **手机**：存到文件里，选「用浏览器打开」（别在微信内置浏览器里开，体验差）。
@@ -99,7 +107,7 @@ npm run check:single   # 建议跑一次，确认双击能用
 2. **旧数据不会自己跟过来**。换成新文件 / 换浏览器 / 换网址，就是换了一个存储源。要带数据过去：先在旧版点「JSON 备份」导出，再到新版「数据页 → 导入恢复」。CSV 只能拿去 Excel 看，回灌不了。
 3. **别发 `dist/` 文件夹**。常规构建产物是 `<script type="module" src="./assets/...">`，浏览器在 `file://` 下会用 CORS 拦掉，双击必白屏；它只能通过 HTTP 服务访问。要离线分发就用 `dist-single/` 那个单文件。
 
-`npm run check:single` 会用本机 Chrome/Edge 以 `file://` 真开一次，断言：目录里只有一个 HTML、零外部引用、React 挂载成功（月历 / 导航 / 统计卡都在）、`localStorage` 可读写、时间面板分钟列 00–59 共 60 项。找不到浏览器时会跳过实测、只做静态检查，可用 `CHROME_PATH` 指定路径。`dist-single/` 是构建产物，已 gitignore，不入库。
+`npm run check:single` 会用本机 Chrome/Edge 以 `file://` 真开一次，断言：目录里只有一个 HTML、零外部引用、**品牌插画已内联且无外链图片**、React 挂载成功（月历 / 导航 / 统计卡都在）、`localStorage` 可读写、时间面板分钟列 00–59 共 60 项。找不到浏览器时会跳过实测、只做静态检查，可用 `CHROME_PATH` 指定路径。`dist-single/` 是构建产物，已 gitignore，不入库。
 
 ## 本次重构显式改的三处口径（已确认）
 
@@ -115,10 +123,16 @@ npm run check:single   # 建议跑一次，确认双击能用
 
 - 单次计时超过 24 小时仍会绕回（`HH:mm` 没有日期），旧版就有的限制，没改数据契约。
 - 起止与手动时长用 `Segmented` 单一 mode 互斥，不再是旧版两个 input 互相清空的事件链。
-- antd 5 全量引入，生产 JS 约 1.3MB（gzip 409KB），单文件离线版约 1.3MB。本地工具够用，要瘦身可做代码分割。
+- antd 5 全量引入，生产 JS 约 1.75MB（gzip 747KB），单文件离线版约 1.72MB（其中三张插画约 411KB）。本地工具够用，要瘦身可做代码分割或再降图片质量。
 - 月历用官方 `Calendar`，**必须走 `fullCellRender`**（完整替换单元格内容）；`cellRender` 只会在默认日期数字下追加，实测会糊成一团（见 `docs/02` 第 16 条）。`npm run check:ui` 已对 42 格、每格仅 1 个日期数字、表头周一起始做静态断言。
 - 柱状图和 24h 圆环是 SVG 自绘，官方组件总览里没有图表组件；图表悬停提示接的是官方 `Tooltip`。
 - 单文件离线版的 `file://` 启动、`localStorage` 读写已用无头 Chrome 实测通过；但**完整交互**（计时刷新连续性、375px 真机、旧版 JSON 逐项对齐）还没人工过一遍，见 `docs/01` 验收清单。
+
+## 主题与原创形象
+
+新主题「深蓝办公室」：主色 `#2F4A6B`（衬衫深蓝）、强调 `#B5764A`（暖棕毛色）、冷蓝灰 `#EDF3F9` 底。只借参考图「治愈色温 + 清爽大留白」的气质，**形象全部是老板原创手绘的三张牛马图**，不碰任何版权 IP。
+
+素材在 `assets/clean/`（老板手工去水印，2048×2048）；跑 `python scripts/build-assets.py` 会压缩、按主体上沿自动做头像近景裁切，生成 `src/assets/brand.js`（全部 data URI，保证离线单文件零外链）。形象落在 5 处：品牌栏牛头、空状态插画、计时中摇摆马头、数据页办公室横幅（带「今日也要耍牛马」便签彩蛋）、保存时的彩带反馈；另有浏览器 favicon。间距 4/8 基数、圆角 10/14/18，不引外部字体（离线版不能联网加载）。详见 `docs/01-重构规格.md` 第十节。
 
 ## 官方组件集成
 

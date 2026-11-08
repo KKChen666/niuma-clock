@@ -104,12 +104,14 @@ try {
         ],
         '统计页': [
           ['Statistic', 'ant-statistic'],
-          ['Empty 空态', 'ant-empty'],
+          ['牛马空态插画', 'art-empty'],
           ['Table', 'ant-table']
         ],
         '数据页': [
           ['Descriptions', 'ant-descriptions'],
           ['Alert 说明', 'ant-alert'],
+          ['办公室场景横幅', 'about-banner'],
+          ['便签彩蛋', 'about-sticky'],
           ['Popconfirm 触发按钮', '清空全部'],
           ['Upload', 'ant-upload']
         ]

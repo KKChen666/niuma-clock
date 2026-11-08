@@ -24,7 +24,8 @@ export default function CalendarPanel() {
     const key = current.format('YYYY-MM-DD');
     const val = dayMap.get(key) || 0;
     const outside = current.month() !== cursor.month();
-    const alpha = val > 0 ? Math.min(0.14 + val / 8 * 0.5, 0.62) : 0;
+    // 深蓝主色着色，上限压到 0.44 保证日期数字与时长文字仍有对比度
+    const alpha = val > 0 ? Math.min(0.10 + val / 8 * 0.34, 0.44) : 0;
     const tip = val > 0
       ? `${key} · 加班 ${fmtDur(val)}${val > 8 ? ' · 超过 8 小时' : ''}`
       : `${key} · 无记录`;
@@ -34,7 +35,7 @@ export default function CalendarPanel() {
         <Badge dot={val > 8} className="cal-badge">
           <div
             className="cal-cell"
-            style={alpha ? { backgroundColor: `rgba(47,109,246,${alpha.toFixed(2)})` } : undefined}
+            style={alpha ? { backgroundColor: `rgba(47,74,107,${alpha.toFixed(2)})` } : undefined}
           >
             <span className="cal-day">{current.date()}</span>
             {!outside && <span className="cal-lunar">{lunarOf(key)}</span>}

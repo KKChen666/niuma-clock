@@ -9,6 +9,7 @@ import { useAppContext } from '../../context.js';
 import {
   calcDuration, fmtDur, validateForm, createRecord, recentContents, todayStr
 } from '../../logic/index.js';
+import { celebrate } from '../../utils/celebrate.js';
 
 const CHIPS = [0.5, 1, 2, 3];
 
@@ -107,6 +108,7 @@ export default function EntryForm() {
     const rec = createRecord({ date, start, end, duration, content, note, editId });
     upsertRecord(rec);
     selectDate(date);
+    if (!editId) celebrate('记下了，又熬一天');
     message.success(editId ? '已更新这笔' : '记下了，又是一天');
     clearForm();
   };
