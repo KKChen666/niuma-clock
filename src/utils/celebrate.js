@@ -1,4 +1,4 @@
-/** 记一笔 / 结束计时的庆祝反馈：彩带 + 牛马探头。纯 DOM，动画结束自动销毁。 */
+/** 下班打卡 / 补录保存的庆祝反馈：彩带 + 牛马探头。纯 DOM，动画结束自动销毁。 */
 import { horseImg } from '../assets/brand.js';
 
 const COLORS = ['#2F4A6B', '#B5764A', '#C98A3C', '#8FAFC7', '#E4C7A8', '#4F8A6D'];

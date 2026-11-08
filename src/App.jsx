@@ -18,7 +18,6 @@ function Root() {
 
   const [activeTab, setActiveTab] = useState('record');
   const [editing, setEditing] = useState(null);   // 正在编辑的记录
-  const [draft, setDraft] = useState(null);       // 结束计时后回填的表单草稿
 
   const removeWithUndo = useCallback((id) => {
     const { removed, index } = rec.remove(id);
@@ -41,14 +40,6 @@ function Root() {
     });
   }, [rec, message]);
 
-  /** 结束计时：回填表单草稿、跳回记录页，剩余交互交给 EntryForm */
-  const finishTimer = useCallback((d) => {
-    setEditing(null);
-    setDraft(d);
-    calendar.selectDate(d.date);
-    setActiveTab('record');
-  }, [calendar]);
-
   const ctx = {
     records: rec.records,
     upsertRecord: rec.upsertRecord,
@@ -60,9 +51,6 @@ function Root() {
     setActiveTab,
     editing,
     setEditing,
-    draft,
-    setDraft,
-    finishTimer,
     message,
     modal
   };
@@ -75,7 +63,7 @@ function Root() {
             <CowAvatar size={42} />
             <div className="brand-copy">
               <Typography.Text className="brand-name">牛马时钟</Typography.Text>
-              <Typography.Text type="secondary" className="brand-sub">加班统计 · 数据只存本机</Typography.Text>
+              <Typography.Text type="secondary" className="brand-sub">打卡记加班 · 数据只存本机</Typography.Text>
             </div>
           </div>
         </header>

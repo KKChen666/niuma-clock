@@ -21,8 +21,7 @@ const toTime = (hm) => {
 
 export default function EntryForm() {
   const {
-    records, calendar, upsertRecord, editing, setEditing,
-    draft, setDraft, message
+    records, calendar, upsertRecord, editing, setEditing, message
   } = useAppContext();
   const { selectedDate, selectDate } = calendar;
 
@@ -33,7 +32,6 @@ export default function EntryForm() {
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');
   const [editId, setEditId] = useState(null);
-  const [tip, setTip] = useState('');
   const cardRef = useRef(null);
   const contentRef = useRef(null);
 
@@ -50,7 +48,6 @@ export default function EntryForm() {
     setContent('');
     setNote('');
     setEditId(null);
-    setTip('');
     setEditing(null);
   };
 
@@ -61,7 +58,6 @@ export default function EntryForm() {
     setDate(editing.date);
     setContent(editing.content || '');
     setNote(editing.note || '');
-    setTip('');
     const auto = calcDuration(editing.start, editing.end);
     if (auto != null && Math.abs(auto - editing.duration) < 0.011) {
       setMode('range');
@@ -74,21 +70,6 @@ export default function EntryForm() {
     }
     cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [editing]);
-
-  // 结束计时：回填草稿（故意不写 duration），聚焦工作内容
-  useEffect(() => {
-    if (!draft) return;
-    setEditId(null);
-    setEditing(null);
-    setDate(draft.date);
-    setMode('range');
-    setRange([toTime(draft.start), toTime(draft.end)]);
-    setManual(null);
-    setTip(draft.preview);
-    setDraft(null);
-    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => contentRef.current?.focus(), 320);
-  }, [draft]);
 
   const switchMode = (m) => {
     setMode(m);
@@ -118,11 +99,14 @@ export default function EntryForm() {
       <Card
         className="panel entry-panel"
         size="small"
-        title={editId ? '改一笔' : '记一笔'}
+        title={editId ? '改一笔' : '补录一笔'}
         extra={editId
           ? <Button type="link" size="small" icon={<CloseOutlined />} onClick={clearForm}>取消编辑</Button>
           : null}
       >
+        <Typography.Text type="secondary" className="entry-hint">
+          忘了打卡、要改时间？在这儿手动填，跟打卡记的是同一本账。
+        </Typography.Text>
         <Form layout="vertical" className="entry-form">
           <Form.Item label="日期">
             <DatePicker
@@ -201,7 +185,6 @@ export default function EntryForm() {
               </span>
             }
           />
-          {tip && <Alert className="draft-tip" type="warning" showIcon message={tip} />}
 
           <Form.Item label="工作内容">
             <AutoComplete

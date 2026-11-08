@@ -166,3 +166,52 @@ test('计时：绝对时间戳、格式、边界与回填草稿', () => {
   near(a.a0, 345); near(a.a1, 367.5);
   near(L.minuteArcAngle(30 * 60 * 1000), 180);
 });
+
+test('打卡：下班自动成记录、content 非空、跨午夜、超 24h、一天多段', () => {
+  // 常规：18:00 上班 → 21:30 下班，直接落库，不用再填表单
+  const t = L.createTimer(new Date(2026, 10, 7, 18, 0, 0));
+  const out = L.finishClock(t, new Date(2026, 10, 7, 21, 30, 0));
+  const r = out.record;
+  assert.equal(r.date, '2026-11-07');
+  assert.equal(r.start, '18:00');
+  assert.equal(r.end, '21:30');
+  near(r.duration, 3.5);
+  assert.equal(r.content, '加班打卡');
+  assert.equal(r.note, '');
+  assert.ok(r.id);
+  assert.equal(out.clock, '3:30:00');
+  assert.equal(out.overLong, false);
+  // content 是 normalizeRecord 唯一强校验项，空内容会被整条丢掉
+  assert.ok(L.normalizeRecord(r), '打卡记录必须能通过旧数据规范化');
+
+  // 跨午夜：归到上班那天
+  const night = L.createTimer(new Date(2026, 10, 7, 23, 0, 0));
+  const n = L.finishClock(night, new Date(2026, 10, 8, 1, 30, 0)).record;
+  assert.equal(n.date, '2026-11-07');
+  assert.equal(n.end, '01:30');
+  near(n.duration, 2.5);
+
+  // 同一分钟内结束：分钟级口径算出 0h，ClockCard 会拦住不落库（不塞垃圾记录）
+  const blink = L.finishClock(
+    L.createTimer(new Date(2026, 10, 7, 18, 0, 5)),
+    new Date(2026, 10, 7, 18, 0, 40)
+  );
+  near(blink.record.duration, 0);
+  assert.equal(blink.overLong, false);
+
+  // 超 24h：起止反算只会补一次 1440 分钟（25h 会错成 1h），改按实际计时
+  const long = L.createTimer(new Date(2026, 10, 7, 8, 0, 0));
+  const l = L.finishClock(long, new Date(2026, 10, 8, 9, 0, 0));
+  assert.equal(l.overLong, true);
+  near(l.record.duration, 25);
+  assert.match(l.record.note, /跨天打卡/);
+
+  // 一天多段：各成一条记录，当天累加
+  const second = L.finishClock(
+    L.createTimer(new Date(2026, 10, 7, 22, 0, 0)),
+    new Date(2026, 10, 7, 23, 0, 0)
+  ).record;
+  assert.notEqual(r.id, second.id);
+  near(L.dayDetail([r, second], '2026-11-07').total, 4.5);
+  assert.equal(L.dayDetail([r, second], '2026-11-07').records.length, 2);
+});

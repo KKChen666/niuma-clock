@@ -45,7 +45,7 @@ try {
     calendar,
     timer: { timer: null, elapsed: 0, now: Date.now(), start() {}, clear() {} },
     removeWithUndo() {}, replaceAll() {}, upsertRecord() {},
-    setEditing() {}, editing: null, draft: null, setDraft() {}, finishTimer() {},
+    setEditing() {}, editing: null,
     activeTab: 'record', setActiveTab() {},
     message: { open() {}, success() {}, warning() {}, error() {}, info() {}, destroy() {} },
     modal: { confirm() {} }
@@ -95,12 +95,15 @@ try {
       const html = renderToString(wrap(React.createElement(Comp)));
       const checks = {
         '记录页': [
+          ['今日打卡大卡片', 'clock-card'],
+          ['上班打卡按钮', '上班打卡'],
+          ['Statistic 今日累计', 'ant-statistic'],
           ['官方 Calendar', 'ant-picker-calendar'],
           ['Badge 红点', 'ant-badge'],
           ['Alert 时长预览', 'ant-alert'],
           ['CheckableTag', 'ant-tag-checkable'],
           ['Divider', 'ant-divider'],
-          ['Avatar(在 App 头部)', 'ant-statistic']
+          ['补录表单', '补录一笔']
         ],
         '统计页': [
           ['Statistic', 'ant-statistic'],
@@ -119,6 +122,19 @@ try {
       const missing = checks.filter(([, needle]) => !html.includes(needle)).map(([label]) => label);
       console.log(`  ${name}: ${html.length} 字符, 断言 ${checks.length} 项, 缺失 ${missing.length ? missing.join('/') : '无'}`);
       if (missing.length) failures++;
+
+      if (name === '记录页') {
+        // 打卡优先：卡片在最前，补录表单排到当天明细之后。
+        // 用带引号的 class / data-ui 锚点，避免命中 <style> 里的 CSS 选择器文本。
+        const iClock = html.indexOf('data-ui="clock-card"');
+        const iOverview = html.indexOf('class="overview-row"');
+        const iDetail = html.indexOf('明细');
+        const iEntry = html.indexOf('class="entry-anchor"');
+        const orderOk = iClock >= 0 && iClock < iOverview && iOverview < iEntry && iDetail < iEntry
+          && iDetail > iOverview;
+        console.log(`  首屏顺序: 打卡(${iClock}) → 概览(${iOverview}) → 明细(${iDetail}) → 补录(${iEntry}) => ${orderOk ? 'PASS' : 'FAIL'}`);
+        if (!orderOk) failures++;
+      }
     } catch (e) {
       console.log(`  ${name}: 渲染异常 => ${e.message}`);
       failures++;

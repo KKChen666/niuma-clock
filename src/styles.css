@@ -230,30 +230,56 @@ body {
   color: var(--muted);
 }
 
-/* ---------- 计时控件 + 加班中的马 ---------- */
-.timer-divider { margin: 12px 0 14px !important; border-color: var(--line) !important; }
-.timer-tip { display: block; font-size: 11px; text-align: center; margin-top: 8px; }
-.timer-status { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.timer-status-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.timer-mascot {
+/* ---------- 首屏打卡大卡片 ---------- */
+.clock-card > .ant-card-body { padding: 14px 16px 16px; }
+.clock-card > .ant-card-head { border-bottom: 1px solid var(--line-2); }
+.clock-title { display: inline-flex; align-items: center; gap: 6px; }
+.clock-face {
+  display: flex; align-items: center; gap: 14px;
+  min-height: 92px; padding: 8px 2px 4px;
+}
+.clock-mascot {
   flex: none;
-  width: 48px; height: 48px;
+  width: 60px; height: 60px;
   border-radius: 50%;
   object-fit: cover;
   object-position: center 30%;
-  border: 2px solid var(--amber);
-  box-shadow: 0 3px 10px rgba(201, 138, 60, .22);
+  border: 2px solid var(--primary-3);
+  box-shadow: 0 3px 10px rgba(47, 74, 107, .16);
+}
+.clock-card.is-running .clock-mascot {
+  border-color: var(--amber);
+  box-shadow: 0 3px 12px rgba(201, 138, 60, .28);
   animation: horse-sway 2.4s ease-in-out infinite;
 }
 @keyframes horse-sway {
   0%, 100% { transform: translateY(0) rotate(-2.5deg); }
   50%      { transform: translateY(-3px) rotate(2.5deg); }
 }
-.timer-clock { font-size: 20px; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; letter-spacing: .5px; }
+.clock-face-main { flex: 1; min-width: 0; }
+.clock-face-main .ant-statistic-title { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.clock-face-main .ant-statistic-content { font-size: 28px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+.clock-face-main .ant-statistic-content-suffix { font-size: 14px; margin-inline-start: 4px; }
+.clock-big {
+  font-size: 30px; font-weight: 700; line-height: 1.15;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums; letter-spacing: .5px;
+  margin: 4px 0 2px;
+}
+.clock-meta { display: block; font-size: 12px; margin-top: 3px; }
+.clock-divider { margin: 8px 0 14px !important; border-color: var(--line-2) !important; }
+.clock-btn { height: 48px !important; font-size: 16px; font-weight: 600; }
+.clock-actions .btn-finish { flex: 1; }
+.clock-card.is-running .clock-actions .ant-btn-primary {
+  background: var(--amber); border-color: var(--amber);
+}
+.clock-tip {
+  display: block; font-size: 11px; line-height: 1.5;
+  text-align: center; margin-top: 10px;
+}
 .btn-finish { flex: 1; }
-.timer-control.is-running .ant-btn-primary { background: var(--amber); border-color: var(--amber); }
 
-/* ---------- 记一笔 ---------- */
+/* ---------- 补录一笔 ---------- */
 .entry-anchor { scroll-margin-top: 16px; }
 .entry-form .ant-form-item { margin-bottom: 14px; }
 .entry-form .ant-form-item-label { padding-bottom: 4px; }
@@ -279,7 +305,7 @@ body {
 .dur-preview.ant-alert.has-value { border-style: solid !important; background: var(--accent-soft) !important; border-color: var(--accent-2) !important; }
 .dur-preview strong { font-size: 18px; color: var(--accent); margin: 0 4px; }
 .dur-text { margin-left: 4px; }
-.draft-tip.ant-alert { font-size: 12px; margin: -6px 0 14px; padding: 7px 10px; border-radius: var(--radius-sm); }
+.entry-hint { display: block; font-size: 12px; line-height: 1.5; margin: 0 0 14px; }
 .entry-actions .btn-save { flex: 1; }
 
 /* ---------- 当天明细 ---------- */
@@ -442,6 +468,9 @@ body {
   .cal-lunar { font-size: 9px; }
   .cal-month-picker { width: 160px; }
   .panel > .ant-card-body { padding: 11px; }
+  .clock-mascot { width: 50px; height: 50px; }
+  .clock-big { font-size: 26px; }
+  .clock-face-main .ant-statistic-content { font-size: 24px; }
   .tab-segmented .ant-segmented-item-label { gap: 4px; font-size: 13px; }
   .about-banner { height: 112px; }
 }

@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "node --test src/logic/__tests__/logic.test.mjs",
     "check:ui": "node scripts/check-ui.mjs",
-    "check:single": "node scripts/check-single.mjs"
+    "check:single": "node scripts/check-single.mjs",
+    "check:clock": "node scripts/check-clock.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.2",

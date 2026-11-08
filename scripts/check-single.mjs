@@ -96,6 +96,8 @@ if (!chrome) {
   const dom = app.stdout || '';
   check('file:// 能打开且 React 已挂载', dom.length > 100000 && dom.includes('<div id="root">') && !/<div id="root">\s*<\/div>/.test(dom), `${(dom.length / 1024).toFixed(0)} KB DOM`);
   check('月历 / 导航 / 统计卡都在', ['ant-picker-calendar', 'ant-segmented', 'ant-statistic'].every(k => dom.includes(k)));
+  check('首屏打卡卡片与按钮已打包', dom.includes('clock-card') && dom.includes('上班打卡'),
+    dom.includes('上班打卡') ? '上班打卡按钮存在' : '未找到打卡按钮');
   const fatal = (app.stderr || '').split('\n').filter(l => /Uncaught|SecurityError|SyntaxError/i.test(l));
   check('无致命脚本错误', fatal.length === 0, fatal.slice(0, 2).join(' | '));
 

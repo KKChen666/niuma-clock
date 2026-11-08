@@ -108,7 +108,7 @@ export default function OvertimeRing() {
         </text>
         <text x={CX} y={CY + 18} textAnchor="middle" className="ring-sub">
           {running
-            ? `计时中 · 今日已记 ${Number(total.toFixed(1))}h`
+            ? `打卡中 · 今日已记 ${Number(total.toFixed(1))}h`
             : `小时 · ${selectedDate.slice(5)} 已记`}
         </text>
         <text x={CX} y={CY + 38} textAnchor="middle" className="ring-mini">
@@ -119,7 +119,7 @@ export default function OvertimeRing() {
       <Typography.Text type="secondary" className="ring-hint">
         {hover
           ? `${hover.start}-${hover.end} · ${hover.content} · ${fmtDur(hover.duration)}`
-          : (running ? '蓝色为已记录时段，琥珀为本次计时' : '把鼠标移到蓝色弧上看那一笔干了啥')}
+          : (running ? '蓝色为已记录时段，琥珀为本次打卡' : '把鼠标移到蓝色弧上看那一笔干了啥')}
       </Typography.Text>
     </div>
   );

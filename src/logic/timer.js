@@ -1,10 +1,13 @@
-// 实时计时（番茄钟式）状态机：纯函数，DOM / setInterval 留给 UI 层。
+// 实时计时 / 上下班打卡状态机：纯函数，DOM / setInterval 留给 UI 层。
 // 关键口径：只存绝对开始时间戳，刷新/关页/多标签都不会丢，也不靠逐秒累加。
 import { fmtDate, pad, calcDuration, fmtDur } from './time.js';
 import { hourAngle } from './ring.js';
+import { createRecord } from './records.js';
 
 export const MIN_VALID_MS = 10 * 1000;        // 小于 10 秒视为误触，不生成记录
 export const CANCEL_CONFIRM_MS = 5 * 60 * 1000; // 取消超过 5 分钟要二次确认
+export const MAX_AUTO_MS = 24 * 60 * 60 * 1000; // calcDuration 只补一次 24h，超过必须改用实际计时
+export const DEFAULT_CLOCK_CONTENT = '加班打卡';
 
 export function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
@@ -38,7 +41,39 @@ export function formatClock(ms) {
 export function isTooShort(ms) { return ms < MIN_VALID_MS; }
 export function needsCancelConfirm(ms) { return ms >= CANCEL_CONFIRM_MS; }
 
-/** 结束计时 → 回填「记一笔」的表单草稿（故意不写 duration，交给起止自动算） */
+/**
+ * 下班打卡 → 直接产出一条可落库的完整记录（打卡版主路径）。
+ *
+ * 为什么必须给 content：`normalizeRecord()` 把 content 当唯一强校验项，
+ * 空内容会被直接丢掉，打卡全自动落库不填内容等于白记。
+ *
+ * 时长口径：
+ * - 24h 内：duration 留空，交给 createRecord 用 calcDuration(start,end) 算，
+ *   保证「明细显示 / 编辑态 / 圆环弧段」三处一致，跨午夜也归开始那天。
+ * - 超过 24h：calcDuration 只会补一次 1440 分钟（25h 会被算成 1h），
+ *   改用真实 elapsed 保留 2 位，并在 note 标明来源，避免悄悄记错。
+ */
+export function finishClock(state, now = new Date(), content = DEFAULT_CLOCK_CONTENT) {
+  const start = state.startHM;
+  const end = hm(now);
+  const ms = Math.max(0, now.getTime() - state.startAt);
+  const overLong = ms >= MAX_AUTO_MS;
+  const hours = Math.round(ms / 36000) / 100;   // ms → 小时，保留 2 位小数
+  const record = createRecord({
+    date: state.startDate,
+    start,
+    end,
+    duration: overLong ? String(hours) : '',
+    content,
+    note: overLong ? '跨天打卡，时长按实际计时' : ''
+  });
+  return { record, clock: formatClock(ms), overLong };
+}
+
+/**
+ * @deprecated 打卡版不再走「结束 → 回填表单草稿 → 人工保存」这条链路。
+ * 保留供手动补录口径对照与回归测试使用。
+ */
 export function finishDraft(state, now = new Date()) {
   const ms = now.getTime() - state.startAt;
   const start = state.startHM, end = hm(now);
