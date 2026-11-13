@@ -14,9 +14,11 @@ export default defineConfig(({ mode }) => {
         : [])
     ],
     base: './',
-    server: { host: '127.0.0.1', port: 5173 },
-    build: single
-      ? { outDir: 'dist-single', emptyOutDir: true }
-      : {}
+    server: { host: '127.0.0.1', port: 5173, open: '/dev.html' },
+    build: {
+      // 开发入口是 dev.html；根 index.html 留给构建产物（GitHub Pages 直接发它，勿手改）
+      rollupOptions: { input: 'dev.html' },
+      ...(single ? { outDir: 'dist-single', emptyOutDir: true } : {})
+    }
   };
 });
