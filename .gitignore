@@ -5,3 +5,8 @@ dist-single/
 .DS_Store
 *.local
 .vite/
+# 本地工具与凭据、临时文件、GitHub 部署副本——绝不入库
+.tmp/
+.gh-config/
+tools/
+dist-link/
