@@ -1,75 +1,52 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import {
-  Card, Segmented, DatePicker, Statistic, Table, Button,
+  Card, Segmented, DatePicker, Statistic, Table,
   Progress, Tooltip, Typography
 } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { useAppContext } from '../../context.js';
-import { weekSummary, monthSummary, yearSummary, fmtDur } from '../../logic/index.js';
-import BarChart from '../BarChart.jsx';
-import { EmptyArt, sceneImg } from '../BrandArt.jsx';
-
-const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
+import { useAppContext } from '../context.js';
+import { weekSummary, monthSummary, yearSummary, fmtDur, splitWork } from '../logic/index.js';
+import BarChart from './BarChart.jsx';
+import WeekStrip from './RecordPage/WeekStrip.jsx';
+import { EmptyArt } from './BrandArt.jsx';
+import { fishImg } from '../assets/scenes.js';
 
 const emptyTable = (
   <EmptyArt
     compact
-    image={sceneImg}
+    image={fishImg}
     title="这段时间还没记"
     sub="趁着没加班，赶紧歇会儿"
   />
 );
 
-export default function StatsPage() {
-  const { records, removeWithUndo } = useAppContext();
-  const [view, setView] = useState('week');
+/**
+ * 时段汇总。用户「本周概览和时间汇总合并，时间汇总加一个周汇总」：
+ * 周 / 月 / 年三档——周视图就是原「本周概览」7 根日柱（点日柱选日期，联动选中日明细），
+ * 月 / 年用柱状图分析；明细表已删（看 / 改记录走选中日明细）。
+ */
+export default function StatsPanel({ initialView = 'week' }) {
+  const { records } = useAppContext();
+  const [view, setView] = useState(initialView);
   const [anchor, setAnchor] = useState(() => dayjs());
 
   const data = useMemo(() => {
     if (view === 'week') {
-      const s = weekSummary(records, anchor.format('YYYY-MM-DD'));
-      return {
-        ...s,
-        bars: s.days.map((d, i) => ({ label: WEEK_LABELS[i], value: d.value })),
-        range: [s.start, s.end]
-      };
+      return weekSummary(records, anchor.format('YYYY-MM-DD'));
     }
     if (view === 'month') {
       const s = monthSummary(records, anchor.year(), anchor.month() + 1);
       return {
         ...s,
-        bars: s.days.map(d => ({ label: String(dayjs(d.date).date()), value: d.value })),
-        range: [`${anchor.year()}-${String(anchor.month() + 1).padStart(2, '0')}-01`,
-                `${anchor.year()}-${String(anchor.month() + 1).padStart(2, '0')}-31`]
+        bars: s.days.map(d => ({ label: String(dayjs(d.date).date()), value: d.value }))
       };
     }
     const s = yearSummary(records, anchor.year());
     return {
       ...s,
-      bars: s.months.map(m => ({ label: `${m.month}月`, value: m.value })),
-      range: [`${anchor.year()}-01-01`, `${anchor.year()}-12-31`]
+      bars: s.months.map(m => ({ label: `${m.month}月`, value: m.value }))
     };
   }, [records, view, anchor]);
-
-  const list = useMemo(() => records
-    .filter(r => r.date >= data.range[0] && r.date <= data.range[1])
-    .sort((a, b) => a.date.localeCompare(b.date) || (a.start || '99').localeCompare(b.start || '99')),
-  [records, data.range]);
-
-  const columns = [
-    { title: '日期', dataIndex: 'date', width: 104 },
-    { title: '时段', key: 'time', width: 112, render: (_, r) => (r.start && r.end ? `${r.start}-${r.end}` : '手动') },
-    { title: '时长', key: 'dur', width: 100, render: (_, r) => fmtDur(r.duration) },
-    { title: '内容', dataIndex: 'content', ellipsis: true },
-    { title: '备注', dataIndex: 'note', width: 110, ellipsis: true },
-    {
-      title: '', key: 'op', width: 48,
-      render: (_, r) => (
-        <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeWithUndo(r.id)} aria-label="删除" />
-      )
-    }
-  ];
 
   const monthColumns = [
     { title: '月份', dataIndex: 'month', render: m => `${m}月` },
@@ -78,8 +55,13 @@ export default function StatsPage() {
   ];
 
   return (
-    <div className="page">
-      <Card className="panel" size="small">
+    <Fragment>
+      <Card
+        className="panel"
+        size="small"
+        data-ui="stats-panel"
+        title={view === 'week' ? '本周概览' : '时段汇总'}
+      >
         <div className="stats-toolbar">
           <Segmented
             value={view}
@@ -129,12 +111,14 @@ export default function StatsPage() {
               percent={Number(data.daysRatio.toFixed(1))}
               size="small"
               strokeColor="var(--primary)"
-              trailColor="#eef2f9"
+              trailColor="var(--track-soft)"
               format={p => `${p}%`}
             />
           </div>
         )}
-        <BarChart data={data.bars} />
+        {view === 'week'
+          ? <WeekStrip anchor={anchor.format('YYYY-MM-DD')} />
+          : <BarChart data={data.bars} />}
       </Card>
 
       {view === 'year' && (
@@ -150,20 +134,6 @@ export default function StatsPage() {
           />
         </Card>
       )}
-
-      <Card className="panel" size="small" title="明细" extra={<Typography.Text type="secondary" className="muted">{list.length} 笔</Typography.Text>}>
-        <div className="table-scroll">
-          <Table
-            size="small"
-            rowKey="id"
-            dataSource={list}
-            columns={columns}
-            pagination={{ pageSize: 8, size: 'small', showSizeChanger: false }}
-            scroll={{ x: 620 }}
-            locale={{ emptyText: emptyTable }}
-          />
-        </div>
-      </Card>
-    </div>
+    </Fragment>
   );
 }

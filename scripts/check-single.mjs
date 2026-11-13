@@ -120,11 +120,14 @@ try {
   rmSync(probePath, { force: true });
   rmSync(join(smokeDir, 'check-profile-probe'), { recursive: true, force: true });
 
-  // 时间面板分钟列探针：注入脚本点开 RangePicker，把分钟项写进 DOM
-  // 防止有人把 minuteStep 改回 5，面板又只剩 00/05/10...
+  // 时间面板分钟列探针：点「补录一笔」展开折叠的表单（表单在打卡页，首页即达），
+  // 再点开 RangePicker，把分钟项写进 DOM。防止有人把 minuteStep 改回 5，面板又只剩 00/05/10...
   const minutesPath = join(outDir, '__minutes.html');
   const injected = html.replace('</body>', `<script>
 setTimeout(function () {
+  var fold = Array.prototype.find.call(document.querySelectorAll('button'), function (x) { return (x.textContent || '').indexOf('补录一笔') >= 0; });
+  if (fold) fold.click();
+  setTimeout(function () {
   var i = Array.prototype.find.call(document.querySelectorAll('.ant-picker-input input'), function (x) { return x.placeholder === '开始'; });
   var p = i && i.closest('.ant-picker');
   if (i && p) {
@@ -142,6 +145,7 @@ setTimeout(function () {
     d.textContent = 'MINUTES:' + mins.length + ':' + mins.join(',');
     document.body.appendChild(d);
   }, 800);
+  }, 400);
 }, 2000);
 </script></body>`);
   writeFileSync(minutesPath, injected, 'utf8');
@@ -154,6 +158,54 @@ setTimeout(function () {
     m ? `${mins.length} 项，首 ${mins[0]} 末 ${mins[mins.length - 1]}` : '面板未打开');
   rmSync(minutesPath, { force: true });
   rmSync(join(smokeDir, 'check-profile-minutes'), { recursive: true, force: true });
+
+  // 「上班时间」选择器真交互探针：初始为空（不预填默认），选完时间不弹回。
+  // 回归锁：曾因缺 customParseFormat，dayjs('HH:mm') 解析恒为 Invalid，受控值非法 → 选择后弹回默认。
+  // 流程：切「数据」tab → 记录输入初值 → 开面板 → 点小时 li '08' → 点分钟 li '30' → 记录终值。
+  const workPath = join(outDir, '__workpicker.html');
+  const workInjected = html.replace('</body>', `<script>
+setTimeout(function () {
+  var tab = Array.prototype.find.call(document.querySelectorAll('.ant-segmented-item'), function (x) { return (x.textContent || '').trim() === '数据'; });
+  if (tab) tab.click();
+  setTimeout(function () {
+    var i = Array.prototype.find.call(document.querySelectorAll('.ant-picker-input input'), function (x) { return x.placeholder === '上班时间'; });
+    var initial = i ? i.value : 'NO-INPUT';
+    var p = i && i.closest('.ant-picker');
+    if (i && p) {
+      i.focus();
+      ['mousedown', 'mouseup', 'click'].forEach(function (t) {
+        i.dispatchEvent(new MouseEvent(t, { bubbles: true }));
+        p.dispatchEvent(new MouseEvent(t, { bubbles: true }));
+      });
+    }
+    setTimeout(function () {
+      var cols = document.querySelectorAll('.ant-picker-time-panel-column');
+      var hour = cols[0] ? Array.prototype.find.call(cols[0].querySelectorAll('li'), function (li) { return li.textContent.trim() === '08'; }) : null;
+      if (hour) hour.click();
+      setTimeout(function () {
+        var cols2 = document.querySelectorAll('.ant-picker-time-panel-column');
+        var min = cols2[1] ? Array.prototype.find.call(cols2[1].querySelectorAll('li'), function (li) { return li.textContent.trim() === '30'; }) : null;
+        if (min) min.click();
+        setTimeout(function () {
+          var d = document.createElement('div');
+          d.id = 'work-picker-probe';
+          d.textContent = 'WORKPICKER|' + initial + '|' + (i ? i.value : 'NO-INPUT');
+          document.body.appendChild(d);
+        }, 800);
+      }, 800);
+    }, 800);
+  }, 600);
+}, 2000);
+</script></body>`);
+  writeFileSync(workPath, workInjected, 'utf8');
+  const workRun = chromeRun(chrome, join(smokeDir, 'check-profile-workpicker'), pathToFileURL(workPath).href, 14000);
+  const workDom = workRun.stdout || '';
+  const w = /<div id="work-picker-probe">WORKPICKER\|([^<]*)<\/div>/.exec(workDom);
+  const wParts = w ? w[1].split('|') : ['NO-PROBE', 'NO-PROBE'];
+  check('「上班时间」初始为空（不预填默认）', wParts[0] === '', `初始值="${wParts[0]}"`);
+  check('选择后时间不弹回（值留住）', /^08:/.test(wParts[1]), `选定后="${wParts[1]}"`);
+  rmSync(workPath, { force: true });
+  rmSync(join(smokeDir, 'check-profile-workpicker'), { recursive: true, force: true });
 }
 
 console.log(`\nRESULT: ${failures === 0 ? 'PASS ✅' : `FAIL ❌ (${failures} 项)`}`);

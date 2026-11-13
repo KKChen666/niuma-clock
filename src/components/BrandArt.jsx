@@ -1,10 +1,12 @@
 /**
- * 品牌形象落点（原创素材，见 assets/clean/README 说明）。
- * 全部用老板手绘的三张牛马图，CSS object-fit 裁切，不额外生成文件。
+ * 品牌形象落点（原创素材，见 assets/clean/README 与 assets/orig/scenes/ 说明）。
+ * 头像用老板手绘牛马图（brand.js），场景插画用牛马 IP 场景图（scenes.js），
+ * CSS object-fit 裁切，不额外生成文件。
  */
-import { cowImg, horseImg, officeImg, sceneImg } from '../assets/brand.js';
+import { cowImg, horseImg } from '../assets/brand.js';
+import { reportImg } from '../assets/scenes.js';
 
-export { cowImg, horseImg, officeImg, sceneImg };
+export { cowImg, horseImg, reportImg };
 
 /** 品牌栏圆形头像 */
 export function CowAvatar({ size = 42, className = '' }) {
@@ -18,7 +20,7 @@ export function CowAvatar({ size = 42, className = '' }) {
   );
 }
 
-/** 空状态：累到趴下的打工人 */
+/** 空状态插画：默认小马头大头照（打卡页）；日历页传周末托腮小马、统计页传摸鱼小牛，各不相同 */
 export function EmptyArt({
   title = '今天没记录，难得啊老板',
   sub = '这条命今天算是暂时保住了',
@@ -36,11 +38,11 @@ export function EmptyArt({
   );
 }
 
-/** 数据页「关于」横幅：办公室场景 + 便签彩蛋 */
+/** 数据页「关于」横幅：白板汇报场景 + 便签彩蛋 */
 export function OfficeBanner() {
   return (
     <div className="about-banner">
-      <img src={officeImg} alt="办公室里的牛马" />
+      <img src={reportImg} alt="白板前汇报的牛马" />
       <div className="about-banner-mask" />
       <span className="about-sticky">今日也要耍牛马</span>
     </div>

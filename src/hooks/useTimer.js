@@ -8,7 +8,7 @@ const read = () => {
 
 /**
  * 实时计时：状态只存绝对开始时间戳（刷新 / 关页 / 切 Tab 都不丢）。
- * 计时中每秒刷新，空闲时 30 秒刷一次（更新圆环红针）。
+ * 计时中每秒刷新，空闲时 30 秒刷一次。
  */
 export function useTimer() {
   const [state, setState] = useState(read);

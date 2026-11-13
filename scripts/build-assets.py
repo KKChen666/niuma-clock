@@ -1,4 +1,4 @@
-# 把老板擦好水印的三张原图压成可内联的 base64 模块。
+# 把老板擦好水印的牛马头像原图压成可内联的 base64 模块（场景插画见 build-scenes.py）。
 # 产出 src/assets/brand.js —— 直接写 data URI，保证 vite-plugin-singlefile 打包后仍是零外部引用。
 # 复用：改了 assets/clean/*.jpg 后跑一次 `python scripts/build-assets.py` 即可。
 #
@@ -17,13 +17,10 @@ OUT = os.path.join(BASE, "src", "assets", "brand.js")
 
 FILES = {
     "cow": "img3.jpg",     # 牛头
-    "horse": "img1.jpg",   # 马头
-    "office": "img2.jpg",  # 办公室场景
+    "horse": "img1.jpg",   # 马头（打卡页空状态大头照）
 }
 
-FULL_SIZE = 1024
 FACE_SIZE = 512
-SCENE_SIZE = 640
 QUALITY = 80
 FAVICON_SIZE = 96
 
@@ -86,16 +83,6 @@ def main():
         if key == "cow":
             fav, nf = encode(cropped, FAVICON_SIZE, 82)
             total += nf
-
-    print("办公室场景：整图（关于横幅）+ 方形裁片（空状态）")
-    b64, n = encode(imgs["office"], FULL_SIZE)
-    total += n
-    emit(lines, "officeImg", b64, n, "办公室场景整图 → 数据页关于横幅")
-
-    scene, top = face_crop(imgs["office"], side_ratio=0.62, face_ratio=0.30)
-    b64, n = encode(scene, SCENE_SIZE)
-    total += n
-    emit(lines, "sceneImg", b64, n, f"办公室场景方形裁片（主体上沿 {top:.0%}）→ 统计空状态")
 
     emit(lines, "faviconUrl", fav, nf, "浏览器标签图标（牛头）")
 

@@ -1,46 +1,45 @@
-import { Card, Statistic, Typography } from 'antd';
+import { Card, Typography } from 'antd';
 import { useAppContext } from '../../context.js';
-import { overview } from '../../logic/index.js';
+import { fmtDur, dayDetail, todayStr } from '../../logic/index.js';
 import ClockCard from './ClockCard.jsx';
-import CalendarPanel from './CalendarPanel.jsx';
-import OvertimeRing from './OvertimeRing.jsx';
-import EntryForm from './EntryForm.jsx';
 import DayList from './DayList.jsx';
+import EntryForm from './EntryForm.jsx';
 
 /**
- * 打卡优先：首屏大卡片 → 概览 → 月历 → 24h 圆环 → 当天明细 → 手动补录。
- * 打完卡往下滚先看到当天明细，补录表单挪到最后（编辑时会自动滚到表单）。
+ * 记录页 = 打卡场景。按使用场景分页（朋友反馈「首页东西太多」）。
+ * 布局（用户调整）：打卡卡片 → 今日明细（原位不动）→ 补录表单（从日历页挪来，放明细下面）；
+ * 本周概览已挪去日历页。打完卡不用切页，补录/改内容就地完成。
  */
 export default function RecordPage() {
-  const { records, calendar } = useAppContext();
-  const ov = overview(records);
+  const { records } = useAppContext();
+  const today = todayStr();
+  const detail = dayDetail(records, today);
 
   return (
     <div className="page">
-      <ClockCard />
-
-      <div className="overview-row">
-        <Card size="small" className="stat-card">
-          <Statistic title="本周累计" value={ov.week} precision={2} suffix="h" />
-        </Card>
-        <Card size="small" className="stat-card">
-          <Statistic title="本月累计" value={ov.month} precision={2} suffix="h" />
-        </Card>
+      <div className="clock-hero">
+        <ClockCard />
+        {/* 上下班时间（加班口径）设置只在数据页一处（用户拍板）：这里不再放快捷入口 */}
       </div>
 
-      <CalendarPanel />
+      <div className="page-extra" data-ui="page-extra">
+        {/* 今日明细：保持原位不动 */}
+        <Card
+          className="panel"
+          size="small"
+          title="今日明细"
+          extra={
+            <Typography.Text type="secondary" className="muted">
+              {detail.records.length} 笔 · 共 {fmtDur(detail.total)}
+            </Typography.Text>
+          }
+        >
+          <DayList date={today} />
+        </Card>
 
-      <Card
-        className="panel"
-        size="small"
-        title="24 小时时段圆环"
-        extra={<Typography.Text type="secondary" className="muted">{calendar.selectedDate}</Typography.Text>}
-      >
-        <OvertimeRing />
-      </Card>
-
-      <DayList />
-      <EntryForm />
+        {/* 补录一笔：放在今日明细下面（用户布局调整） */}
+        <EntryForm />
+      </div>
     </div>
   );
 }

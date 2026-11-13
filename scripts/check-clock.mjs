@@ -1,7 +1,9 @@
 /**
  * 打卡交互回归（npm run check:clock）
- * 用无头 Chrome 真点「上班打卡 → 下班打卡」，验证记录自动写进 localStorage：
- * 不用填工作内容、不用点保存，且不会留下 0 小时的垃圾记录。
+ * 用无头 Chrome 真点「上班打卡 → 下班打卡」，验证：
+ *   1. 两次时间各自记录并展示在首屏
+ *   2. 两次都在后自动算出工作时长（不是只显示某一次打卡时间）
+ *   3. 下班自动落库，不用填工作内容、不用点保存，且不留下 0 小时的垃圾记录
  * 靠 --virtual-time-budget 推进定时器与 Date.now()，不需要真的等一分多钟。
  * 找不到 Chrome/Edge 时跳过，可用 CHROME_PATH 指定。
  */
@@ -34,16 +36,33 @@ const injected = html.replace('</body>', `<script>
     if (b) { b.click(); return true; }
     return false;
   }
+  function text(sel) {
+    var el = document.querySelector(sel);
+    return el ? el.textContent.trim() : '';
+  }
+  function snapshot() {
+    return {
+      clockIn: text('[data-ui="clock-in"]'),
+      clockOut: text('[data-ui="clock-out"]'),
+      duration: text('[data-ui="clock-duration"]')
+    };
+  }
   setTimeout(function () {
     var started = click('上班打卡');
     setTimeout(function () {
+      // 只打了上班：上班时间已展示，下班位与工作时长都还是占位符
+      var afterIn = snapshot();
       var ended = click('下班打卡');
       setTimeout(function () {
+        // 两次都打了：两个时间各展示一个，工作时长自动算出来
+        var afterOut = snapshot();
         var d = document.createElement('div');
         d.id = 'clock-probe';
         d.textContent = 'RESULT:' + JSON.stringify({
           started: started,
           ended: ended,
+          afterIn: afterIn,
+          afterOut: afterOut,
           timer: localStorage.getItem('overtime_timer_v1'),
           records: localStorage.getItem('overtime_records_v1')
         });
@@ -91,8 +110,25 @@ try {
     const data = JSON.parse(raw);
     const recs = data.records ? JSON.parse(data.records) : [];
     const r = recs[0] || {};
+    const afterIn = data.afterIn || {};
+    const afterOut = data.afterOut || {};
+    const hhmm = /\d{2}:\d{2}/;
+
     check('上班打卡按钮可点', data.started === true);
     check('下班打卡按钮可点', data.ended === true);
+    check('上班后展示上班打卡时间', hhmm.test(afterIn.clockIn || ''), afterIn.clockIn);
+    check('上班后下班位留空占位', (afterIn.clockOut || '').includes('--:--'), afterIn.clockOut);
+    check('上班后工作时长实时跳动（时:分:秒）',
+      /\d+:\d{2}:\d{2}/.test(afterIn.duration || '') && !(afterIn.duration || '').includes('--'),
+      afterIn.duration);
+    check('下班后两个打卡时间都展示', hhmm.test(afterOut.clockIn || '') && hhmm.test(afterOut.clockOut || ''),
+      `${afterOut.clockIn} / ${afterOut.clockOut}`);
+    check('展示时间与落库记录一致',
+      (afterOut.clockIn || '').includes(r.start) && (afterOut.clockOut || '').includes(r.end),
+      `${r.start}–${r.end}`);
+    check('两次都在后自动显示工作时长',
+      !(afterOut.duration || '').includes('--') && /小时|分/.test(afterOut.duration || ''),
+      afterOut.duration);
     check('下班后计时状态已清理', data.timer === null);
     check('自动生成 1 条记录（没填内容、没点保存）', recs.length === 1, `${recs.length} 条`);
     check('默认工作内容非空', r.content === '加班打卡', String(r.content));

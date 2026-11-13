@@ -1,14 +1,48 @@
-import { useMemo } from 'react';
-import { Card, Button, Statistic, Upload, Alert, Descriptions, Popconfirm, Typography } from 'antd';
+import { useMemo, useState } from 'react';
+import { Card, Button, Statistic, Upload, Alert, Descriptions, Popconfirm, Typography, TimePicker } from 'antd';
 import { DownloadOutlined, UploadOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { useAppContext } from '../../context.js';
-import { RECORDS_KEY, toCSV, toBackupJSON, mergeImport, fmtDur, todayStr } from '../../logic/index.js';
+import { RECORDS_KEY, WORK_KEY, toCSV, toBackupJSON, mergeImport, fmtDur, todayStr } from '../../logic/index.js';
 import { downloadText } from '../../utils/download.js';
 import { buildSampleRecords } from '../../utils/sample.js';
 import { OfficeBanner } from '../BrandArt.jsx';
 
+// 快捷班制（加班定义因人而异：965 / 996 / 弹性班……）：点选只是填入时间，点「保存」才生效。
+// 只涉及每天上下班时刻；跨天班（end < start，如夜班 22:00-06:00）逻辑层已支持。
+const WORK_PRESETS = [
+  { key: '965', label: '965', start: '09:00', end: '18:00' },
+  { key: '996', label: '996', start: '09:00', end: '21:00' },
+  { key: 'night', label: '夜班', start: '22:00', end: '06:00' }
+];
+
+// dayjs 字符串解析有坑（没装插件时必为 Invalid，表现为「选完弹回」）；用时/分直接构造 TimePicker 的值，与 EntryForm 同款写法
+const pickerValue = (hm) => {
+  const [h, m] = hm.split(':');
+  return dayjs().hour(Number(h)).minute(Number(m)).second(0).millisecond(0);
+};
+
 export default function DataPage() {
-  const { records, replaceAll, message } = useAppContext();
+  const { records, replaceAll, message, setWork } = useAppContext();
+  // 不预填默认时间：只有保存过才回显，没保存过留空（默认口径 09:00-18:00 由 worktime.js 兜底）
+  const [draft, setDraft] = useState(() => {
+    try {
+      const raw = globalThis.localStorage?.getItem(WORK_KEY);
+      const w = raw ? JSON.parse(raw) : null;
+      if (w && typeof w.start === 'string' && typeof w.end === 'string') return [w.start, w.end];
+    } catch (e) { /* 坏数据当没填过 */ }
+    return ['', ''];
+  });
+
+  // 口径（与 worktime.js 一致）：两个时间都要填、不能同一分钟；跨午夜（end < start）合法，按跨天班算
+  // 时间面板占位符刻意避开「开始」——check-single 的分钟探针靠它找补录表单，别改回去。
+  const saveWork = () => {
+    const [s, e] = draft;
+    if (!s || !e) { message.info('上班、下班时间都要填'); return; }
+    if (s === e) { message.info('上班和下班不能是同一分钟'); return; }
+    setWork({ start: s, end: e });
+    message.success(`标准班已生效：${s} - ${e}，打卡和统计按此区分上班/加班`);
+  };
 
   const info = useMemo(() => {
     const total = records.reduce((a, r) => a + (r.duration || 0), 0);
@@ -88,6 +122,51 @@ export default function DataPage() {
           </Card>
         </div>
         <Descriptions className="data-desc" size="small" column={1} items={overviewItems} />
+      </Card>
+
+      <Card className="panel work-card" size="small" title="上下班时间（加班口径）" data-ui="work-settings">
+        <Typography.Paragraph type="secondary" className="data-note">
+          请填你自己的上下班时间，<Typography.Text strong>下班时间之后算加班</Typography.Text>
+        </Typography.Paragraph>
+
+        <div className="work-presets" data-ui="work-presets">
+          {WORK_PRESETS.map((p) => (
+            <Button
+              key={p.key}
+              size="small"
+              data-ui={`work-preset-${p.key}`}
+              onClick={() => {
+                setDraft([p.start, p.end]);
+                message.info(`已填入 ${p.label}：${p.start}-${p.end}，点「保存」生效`);
+              }}
+            >
+              {p.label}<span className="preset-time">{p.start}-{p.end}</span>
+            </Button>
+          ))}
+        </div>
+
+        <div className="work-form" data-ui="work-form">
+          <TimePicker
+            size="small"
+            format="HH:mm"
+            minuteStep={1}
+            allowClear={false}
+            placeholder="上班时间"
+            value={draft[0] ? pickerValue(draft[0]) : null}
+            onChange={(v) => v && setDraft((d) => [v.format('HH:mm'), d[1]])}
+          />
+          <span className="shift-sep">-</span>
+          <TimePicker
+            size="small"
+            format="HH:mm"
+            minuteStep={1}
+            allowClear={false}
+            placeholder="下班时间"
+            value={draft[1] ? pickerValue(draft[1]) : null}
+            onChange={(v) => v && setDraft((d) => [d[0], v.format('HH:mm')])}
+          />
+          <Button size="small" type="primary" data-ui="work-save" onClick={saveWork}>保存</Button>
+        </div>
       </Card>
 
       <Card className="panel" size="small" title="导入导出">

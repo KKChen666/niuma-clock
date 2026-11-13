@@ -1,7 +1,8 @@
 /** 下班打卡 / 补录保存的庆祝反馈：彩带 + 牛马探头。纯 DOM，动画结束自动销毁。 */
-import { horseImg } from '../assets/brand.js';
+import { freedomImg } from '../assets/scenes.js';
 
-const COLORS = ['#2F4A6B', '#B5764A', '#C98A3C', '#8FAFC7', '#E4C7A8', '#4F8A6D'];
+// v2 冷灰蓝调色板（docs/03 2.1）：蓝 / 琥珀 / 薄荷 / 警示橙 / 雾蓝 / 陶土红
+const COLORS = ['#5B7FA6', '#C49A6C', '#68B89A', '#D4943E', '#8FAFC7', '#D4736C'];
 
 export function celebrate(text = '记下了，又熬一天') {
   if (typeof document === 'undefined') return;
@@ -23,7 +24,7 @@ export function celebrate(text = '记下了，又熬一天') {
   const pop = document.createElement('div');
   pop.className = 'confetti-pop';
   const img = document.createElement('img');
-  img.src = horseImg;
+  img.src = freedomImg;
   img.alt = '';
   const label = document.createElement('span');
   label.textContent = text;

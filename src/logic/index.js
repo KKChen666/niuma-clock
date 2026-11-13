@@ -6,3 +6,7 @@ export * from './ring.js';
 export * from './records.js';
 export * from './stats.js';
 export * from './timer.js';
+export * from './clock.js';
+export * from './wage.js';
+export * from './worktime.js';
+export * from './quotes.js';

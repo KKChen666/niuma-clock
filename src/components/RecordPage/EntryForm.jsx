@@ -3,7 +3,7 @@ import {
   Form, Input, InputNumber, AutoComplete, DatePicker, TimePicker,
   Segmented, Button, Card, Space, Tag, Alert, Typography
 } from 'antd';
-import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { SaveOutlined, CloseOutlined, PlusOutlined, DownOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAppContext } from '../../context.js';
 import {
@@ -21,7 +21,7 @@ const toTime = (hm) => {
 
 export default function EntryForm() {
   const {
-    records, calendar, upsertRecord, editing, setEditing, message
+    records, calendar, upsertRecord, editing, setEditing, setActiveTab, message
   } = useAppContext();
   const { selectedDate, selectDate } = calendar;
 
@@ -32,6 +32,7 @@ export default function EntryForm() {
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');
   const [editId, setEditId] = useState(null);
+  const [open, setOpen] = useState(false);   // 补录表单默认收起（朋友反馈「第二页精简」）
   const cardRef = useRef(null);
   const contentRef = useRef(null);
 
@@ -54,6 +55,7 @@ export default function EntryForm() {
   // 编辑：优先还原「起止」，当时长与起止对不上时还原「手动时长」
   useEffect(() => {
     if (!editing) return;
+    setActiveTab('record');   // 表单在打卡页：从日历页点「编辑」也要切回来
     setEditId(editing.id);
     setDate(editing.date);
     setContent(editing.content || '');
@@ -68,8 +70,13 @@ export default function EntryForm() {
       setManual(editing.duration);
       setRange(null);
     }
-    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setOpen(true);   // 改哪笔就自动展开表单（含打卡后的「去填写」入口）
   }, [editing]);
+
+  // 展开完成后再滚过去：收起态 display:none 下 scrollIntoView 是空操作
+  useEffect(() => {
+    if (open && editing) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [open, editing]);
 
   const switchMode = (m) => {
     setMode(m);
@@ -92,16 +99,28 @@ export default function EntryForm() {
     if (!editId) celebrate('记下了，又熬一天');
     message.success(editId ? '已更新这笔' : '记下了，又是一天');
     clearForm();
+    setOpen(false);   // 记完收起，日历页回到清爽状态
   };
 
   return (
     <div ref={cardRef} className="entry-anchor">
+      {/* 折叠头：默认只留一条「补录一笔」，点开才出表单（DOM 始终保留，断言/编辑不受影响） */}
+      <Button
+        type="dashed"
+        block
+        className="entry-fold"
+        icon={open ? <DownOutlined /> : <PlusOutlined />}
+        onClick={() => setOpen(o => !o)}
+      >
+        {editId ? '改一笔' : '补录一笔'}
+      </Button>
+      <div className={open ? 'entry-body' : 'entry-body is-hidden'}>
       <Card
         className="panel entry-panel"
         size="small"
         title={editId ? '改一笔' : '补录一笔'}
         extra={editId
-          ? <Button type="link" size="small" icon={<CloseOutlined />} onClick={clearForm}>取消编辑</Button>
+          ? <Button type="link" size="small" icon={<CloseOutlined />} onClick={() => { clearForm(); setOpen(false); }}>取消编辑</Button>
           : null}
       >
         <Typography.Text type="secondary" className="entry-hint">
@@ -232,6 +251,7 @@ export default function EntryForm() {
           </Space.Compact>
         </Form>
       </Card>
+      </div>
     </div>
   );
 }

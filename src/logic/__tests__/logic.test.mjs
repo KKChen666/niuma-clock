@@ -215,3 +215,240 @@ test('打卡：下班自动成记录、content 非空、跨午夜、超 24h、�
   near(L.dayDetail([r, second], '2026-11-07').total, 4.5);
   assert.equal(L.dayDetail([r, second], '2026-11-07').records.length, 2);
 });
+
+test('打卡视图：两次时间都在才自动算并显示工作时长', () => {
+  const T = '2026-11-08';
+  const rec = (start, end, duration, id) => ({ id, date: T, start, end, duration, content: '加班打卡', note: '' });
+
+  // 没打卡：两个时间位和时长都是空的
+  assert.deepEqual(L.clockView([], null, T), {
+    running: false, start: '', end: '', duration: null, durationText: '', ready: false
+  });
+
+  // 只打了上班：记下并展示上班时间，下班位留空，时长不算
+  assert.deepEqual(L.clockView([], { startHM: '09:00' }, T), {
+    running: true, start: '09:00', end: '', duration: null, durationText: '', ready: false
+  });
+
+  // 两次都打了：两个时间各自展示，时长按两次打卡之间自动算
+  const v = L.clockView([rec('09:00', '18:30', 9.5, 'a')], null, T);
+  assert.equal(v.start, '09:00');
+  assert.equal(v.end, '18:30');
+  near(v.duration, 9.5);
+  assert.equal(v.durationText, '9小时30分');
+  assert.equal(v.ready, true);
+
+  // 一天多段：展示最后落库的那一段（新记录追加在数组末尾，不按时间重排）
+  const multi = L.clockView([
+    rec('09:00', '12:00', 3, 'a'),
+    rec('13:30', '18:00', 4.5, 'b'),
+    rec('20:00', '21:00', 1, 'c')
+  ], null, T);
+  assert.equal(multi.start, '20:00');
+  assert.equal(multi.end, '21:00');
+  assert.equal(multi.durationText, '1小时');
+
+  // 旧数据缺 duration：按起止反算，跨午夜也能算对
+  const legacy = L.clockView([{ id: 'x', date: T, start: '23:00', end: '01:30', content: '旧' }], null, T);
+  near(legacy.duration, 2.5);
+  assert.equal(legacy.durationText, '2小时30分');
+
+  // 手动时长记录（无起止）不占打卡位
+  const manual = L.clockView([{ id: 'y', date: T, start: '', end: '', duration: 2, content: '手动' }], null, T);
+  assert.equal(manual.ready, false);
+});
+
+test('工资与牛马值：简单时薪（1A）、等级升级制（2A）', () => {
+  near(L.hourlyRate(12000), 12000 / 21.75 / 8);
+  assert.equal(L.hourlyRate(0), null);
+  assert.equal(L.hourlyRate(null), null);
+  assert.equal(L.hourlyRate('abc'), null);
+  near(L.wageOf(9.5, L.hourlyRate(12000)), (9.5 * 12000) / 21.75 / 8);
+  assert.equal(L.wageOf(2, null), null);
+  assert.equal(L.wageOf(NaN, 100), null);
+
+  const l0 = L.niumaLevel(0);
+  assert.equal(l0.title, '见习牛马');
+  assert.equal(l0.level, 1);
+  assert.equal(l0.nextTitle, '正式牛马');
+  assert.equal(l0.gapHours, 10);
+  assert.equal(l0.progress, 0);
+
+  const l5 = L.niumaLevel(5);
+  near(l5.progress, 50); // 5h / 10h
+  assert.equal(l5.gapHours, 5);
+
+  const l10 = L.niumaLevel(10);
+  assert.equal(l10.title, '正式牛马');
+  assert.equal(l10.level, 2);
+  assert.equal(l10.nextTitle, '资深牛马');
+
+  const l200 = L.niumaLevel(200);
+  assert.equal(l200.title, '牛马王');
+  assert.equal(l200.nextTitle, '牛马圣体');
+
+  const top = L.niumaLevel(999);
+  assert.equal(top.title, '牛马圣体');
+  assert.equal(top.nextTitle, null);
+  assert.equal(top.progress, 100);
+  assert.equal(top.gapHours, 0);
+
+  // 月薪存取（独立 key，只存本机）：好数据 / 0 非法 / 清空移除
+  const mem = {
+    data: {},
+    getItem(k) { return k in this.data ? this.data[k] : null; },
+    setItem(k, v) { this.data[k] = String(v); },
+    removeItem(k) { delete this.data[k]; }
+  };
+  L.saveWage(12000, mem);
+  assert.equal(L.loadWage(mem), 12000);
+  mem.data[L.WAGE_KEY] = '0';
+  assert.equal(L.loadWage(mem), null);
+  L.saveWage(null, mem);
+  assert.equal(L.loadWage(mem), null);
+});
+
+test('单次牛马等级：段位边界、升级嘲讽、降级慰问（v2 毒舌版）', () => {
+  // 11 级：EX <5min，Lv.1 5min…SS 1440min（24h）封顶
+  assert.equal(L.PUNCH_LEVELS.length, 11);
+  assert.equal(L.PUNCH_LEVELS[0].rank, 'EX');
+  assert.equal(L.PUNCH_LEVELS[10].rank, 'SS');
+
+  // 闪现彩蛋级：<5min，无下一段位
+  const ex = L.punchLevel(3 / 60);
+  assert.equal(ex.rank, 'EX');
+  assert.equal(ex.title, '闪现打卡');
+  assert.equal(ex.nextTitle, '签到侠');
+  assert.equal(ex.gapMinutes, 2);
+
+  // 含下限边界：5min 整进 Lv.1，30min 整进 Lv.2
+  assert.equal(L.punchLevel(5 / 60).rank, 'Lv.1');
+  assert.equal(L.punchLevel(29 / 60).rank, 'Lv.1');
+  assert.equal(L.punchLevel(30 / 60).rank, 'Lv.2');
+  assert.equal(L.punchLevel(2.5).rank, 'Lv.4');   // 150min
+  assert.equal(L.punchLevel(3.99).rank, 'Lv.4');
+  assert.equal(L.punchLevel(4).rank, 'Lv.5');
+  assert.equal(L.punchLevel(16).rank, 'Lv.9');
+
+  // SS：>24h 跨天，满级无下一段
+  const ss = L.punchLevel(25);
+  assert.equal(ss.rank, 'SS');
+  assert.equal(ss.nextTitle, null);
+  assert.equal(ss.gapMinutes, 0);
+  assert.match(ss.blurb, /光合作用/);
+
+  // 时长字段回带：分钟数按入参小时换算
+  assert.equal(L.punchLevel(2).minutes, 120);
+
+  // 升级嘲讽：点名下一段位；满级不提升级
+  const taunt = L.punchTaunt(2);      // 120min 正好 Lv.4，下一段汗血宝马
+  assert.match(taunt, /汗血宝马/);
+  assert.match(taunt, /福报在招手/);
+  assert.match(L.punchTaunt(30), /光合作用/);
+
+  // 降级慰问：比上一班短才安慰；持平/变长不啰嗦
+  assert.equal(L.punchVerdict(3, 2), '今天收敛了？老板还没适应没有你的夜晚');
+  assert.equal(L.punchVerdict(2, 2), null);
+  assert.equal(L.punchVerdict(2, 3), null);
+  assert.equal(L.punchVerdict(null, 2), null);
+});
+
+test('打卡毒舌：场景选池、seq 轮换（v3）', () => {
+  const wed10 = new Date(2026, 10, 11, 10, 0);   // 周三上午
+  const sat11 = new Date(2026, 10, 14, 11, 0);   // 周六上午
+  const wed23 = new Date(2026, 10, 11, 23, 0);   // 周三深夜
+  const thu3 = new Date(2026, 10, 12, 3, 0);     // 周四凌晨
+
+  // 上班：工作时间 → 开工池；深夜 → 深夜池；周末 → 周末池
+  assert.equal(L.quotePool('in', { now: wed10 }), 'clockIn');
+  assert.equal(L.quotePool('in', { now: wed23 }), 'night');
+  assert.equal(L.quotePool('in', { now: thu3 }), 'night');
+  assert.equal(L.quotePool('in', { now: sat11 }), 'weekend');
+
+  // 下班：短班彩蛋优先 → 超长班彩蛋 → 深夜 → 周末 → 收工
+  assert.equal(L.quotePool('out', { hours: 3 / 60, now: wed10 }), 'flash');
+  assert.equal(L.quotePool('out', { hours: 17, now: wed10 }), 'marathon');
+  assert.equal(L.quotePool('out', { hours: 2, now: wed23 }), 'night');
+  assert.equal(L.quotePool('out', { hours: 2, now: sat11 }), 'weekend');
+  assert.equal(L.quotePool('out', { hours: 2, now: wed10 }), 'clockOut');
+  // 深夜优先于周末：周六 23 点也是深夜池
+  assert.equal(L.quotePool('out', { hours: 2, now: new Date(2026, 10, 14, 23, 0) }), 'night');
+
+  // seq 轮换：当天不重复，转一圈回环
+  const a0 = L.punchQuote('out', { hours: 2, now: wed10, seq: 0 });
+  const a1 = L.punchQuote('out', { hours: 2, now: wed10, seq: 1 });
+  assert.notEqual(a0, a1);
+  assert.equal(L.punchQuote('out', { hours: 2, now: wed10, seq: L.QUOTE_POOLS.clockOut.length }), a0);
+  // 弹幕都出自对应池
+  assert.ok(L.QUOTE_POOLS.flash.includes(L.punchQuote('out', { hours: 1 / 60, now: wed10, seq: 2 })));
+});
+
+test('牛马之最：纪录墙五项（v3）', () => {
+  assert.deepEqual(L.niumaWall([]), []);
+  const recs = [
+    { id: 'a', date: '2026-11-02', start: '09:00', end: '18:00', duration: 9 },
+    { id: 'b', date: '2026-11-03', start: '10:00', end: '02:00', duration: 16 }, // 跨午夜最晚下班
+    { id: 'c', date: '2026-11-03', start: '13:00', end: '14:00', duration: 1 },
+    { id: 'd', date: '2026-11-05', start: '22:00', end: '23:30', duration: 1.5 },
+    { id: 'e', date: '2026-11-08', start: '08:00', end: '12:00', duration: 4 }
+  ];
+  const wall = L.niumaWall(recs);
+  assert.equal(wall.length, 5);
+  const by = Object.fromEntries(wall.map(i => [i.key, i]));
+  assert.equal(by.longest.value, '16小时');
+  assert.equal(by.longest.sub, '2026-11-03');
+  assert.equal(by.latest.value, '02:00');   // 跨午夜 02:00 比 23:30 晚
+  assert.equal(by.bestDay.value, '17小时');  // 11-03 两班合计
+  assert.equal(by.bestDay.sub, '2026-11-03');
+  assert.equal(by.shortest.value, '1小时');
+  assert.equal(by.shortest.sub, '2026-11-03');
+  assert.equal(by.streak.value, '2 天');
+  assert.equal(by.streak.sub, '2026-11-02 起');
+  for (const item of wall) assert.ok(item.taunt.length > 0, `${item.key} 缺毒舌`);
+});
+
+test('标准班制：配置容错读取（坏数据一律回落默认）', () => {
+  assert.deepEqual(L.parseWork(null), L.DEFAULT_WORK);
+  assert.deepEqual(L.parseWork('{坏'), L.DEFAULT_WORK);
+  assert.deepEqual(L.parseWork('{"start":"9:00","end":"18:00"}'), L.DEFAULT_WORK); // 非 HH:mm 两位格式
+  assert.deepEqual(L.parseWork({ start: '09:00' }), L.DEFAULT_WORK);               // 缺 end
+  assert.deepEqual(L.parseWork({ start: '09:00', end: '25:00' }), L.DEFAULT_WORK); // 非法时刻
+  assert.deepEqual(L.parseWork({ start: '09:00', end: '18:00' }), { start: '09:00', end: '18:00' });
+  assert.deepEqual(L.parseWork('{"start":"22:00","end":"06:00"}'), { start: '22:00', end: '06:00' });
+});
+
+test('加班判定：早到不罚、过下班点即加班、跨天班制班内绿班外红', () => {
+  // 日班制 09:00-18:00（分钟口径 0-1439）
+  assert.equal(L.isOvertimeMin(7 * 60, L.DEFAULT_WORK), false);      // 早到算正常
+  assert.equal(L.isOvertimeMin(9 * 60, L.DEFAULT_WORK), false);      // 刚上班
+  assert.equal(L.isOvertimeMin(12 * 60 + 30, L.DEFAULT_WORK), false); // 午休不扣
+  assert.equal(L.isOvertimeMin(18 * 60, L.DEFAULT_WORK), true);      // 过下班点即加班
+  assert.equal(L.isOvertimeMin(23 * 60 + 59, L.DEFAULT_WORK), true);
+  // 跨天班制 22:00-06:00：班内绿、班外红
+  const night = { start: '22:00', end: '06:00' };
+  assert.equal(L.isOvertimeMin(23 * 60, night), false);
+  assert.equal(L.isOvertimeMin(3 * 60, night), false);
+  assert.equal(L.isOvertimeMin(7 * 60, night), true);
+  assert.equal(L.isOvertimeMin(12 * 60, night), true);
+  // 非法输入不误报
+  assert.equal(L.isOvertimeMin(NaN, L.DEFAULT_WORK), false);
+  assert.equal(L.isOvertimeMin(2000, L.DEFAULT_WORK), false);
+});
+
+test('计时器变色：上班时间绿、加班红、跨天班全算加班', () => {
+  const t = (h, m, day = 7) => new Date(2026, 10, day, h, m).getTime();
+  const timer = (startAt) => ({ startAt });
+  // 09:00 开始，17:59 还是上班时间；18:00 起翻红
+  assert.equal(L.timerOvertime(timer(t(9, 0)), t(17, 59), L.DEFAULT_WORK), false);
+  assert.equal(L.timerOvertime(timer(t(9, 0)), t(18, 0), L.DEFAULT_WORK), true);
+  // 跨天班（22:00 开到次日）：过了午夜全算加班
+  assert.equal(L.timerOvertime(timer(t(22, 0, 7)), t(23, 0, 7), L.DEFAULT_WORK), true);
+  assert.equal(L.timerOvertime(timer(t(22, 0, 7)), t(1, 30, 8), L.DEFAULT_WORK), true);
+  // 跨天班制（22:00-06:00）：凌晨还在班上不算加班
+  const night = { start: '22:00', end: '06:00' };
+  assert.equal(L.timerOvertime(timer(t(22, 0, 7)), t(3, 0, 8), night), false);
+  assert.equal(L.timerOvertime(timer(t(22, 0, 7)), t(7, 0, 8), night), true);
+  // 无计时 / 坏数据
+  assert.equal(L.timerOvertime(null, t(20, 0), L.DEFAULT_WORK), false);
+  assert.equal(L.timerOvertime({}, t(20, 0), L.DEFAULT_WORK), false);
+});
