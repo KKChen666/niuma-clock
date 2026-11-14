@@ -1,0 +1,32 @@
+<view class="panel cal-panel">
+  <view class="panel-body cal-body">
+    <view class="cal-header">
+      <view class="cal-arrow" bindtap="onPrev" hover-class="tap-fade">‹</view>
+      <picker mode="date" fields="month" value="{{pickerValue}}" bindchange="onMonthPicker">
+        <view class="cal-month">{{monthLabel}} ▾</view>
+      </picker>
+      <view class="cal-arrow" bindtap="onNext" hover-class="tap-fade">›</view>
+      <view class="cal-today" bindtap="onToday" hover-class="tap-fade">回今天</view>
+    </view>
+
+    <view class="cal-weekdays">
+      <view wx:for="{{weekdays}}" wx:key="*this" class="cal-weekday">{{item}}</view>
+    </view>
+
+    <view class="cal-grid">
+      <view
+        wx:for="{{cells}}"
+        wx:key="date"
+        class="cal-cell {{item.outside ? 'is-outside' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.isSelected ? 'is-selected' : ''}}"
+        style="background-color: {{item.bg}};"
+        data-date="{{item.date}}"
+        bindtap="onCell"
+      >
+        <view wx:if="{{item.dot}}" class="cal-dot"></view>
+        <text class="cal-day">{{item.day}}</text>
+        <text wx:if="{{item.lunar}}" class="cal-lunar">{{item.lunar}}</text>
+        <text wx:if="{{item.valText}}" class="cal-val">{{item.valText}}</text>
+      </view>
+    </view>
+  </view>
+</view>

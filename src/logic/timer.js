@@ -3,6 +3,7 @@
 import { fmtDate, pad, calcDuration, fmtDur } from './time.js';
 import { hourAngle } from './ring.js';
 import { createRecord } from './records.js';
+import { clockOutRemindAt } from './worktime.js';
 
 export const MIN_VALID_MS = 10 * 1000;        // 小于 10 秒视为误触，不生成记录
 export const CANCEL_CONFIRM_MS = 5 * 60 * 1000; // 取消超过 5 分钟要二次确认
@@ -11,12 +12,16 @@ export const DEFAULT_CLOCK_CONTENT = '加班打卡';
 
 export function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
-export function createTimer(now = new Date()) {
-  return {
+export function createTimer(now = new Date(), work = null) {
+  const t = {
     startAt: now.getTime(),
     startDate: fmtDate(now),
     startHM: hm(now)
   };
+  // 传了班制就顺手算好「该几点提醒打下班卡」，随 timer 一起存，
+  // 云函数 niumaRemind 直接读这个字段推订阅消息（口径只此一份）。
+  if (work) t.remindAt = clockOutRemindAt(t, work);
+  return t;
 }
 
 /** 从 localStorage 恢复，坏数据一律当作「没在计时」 */

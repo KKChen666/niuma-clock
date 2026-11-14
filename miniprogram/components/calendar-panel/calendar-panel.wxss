@@ -1,0 +1,38 @@
+.cal-body { padding: 20rpx 16rpx; }
+.cal-header { display: flex; align-items: center; padding: 0 4rpx 16rpx; }
+.cal-arrow {
+  width: 56rpx; height: 56rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44rpx; line-height: 1;
+  color: var(--text-secondary);
+  border-radius: 16rpx;
+  background: var(--bg-card-hover);
+}
+.cal-month { flex: 1; text-align: center; font-size: 28rpx; font-weight: 600; color: var(--text-primary); }
+.cal-today { font-size: 24rpx; color: var(--accent-blue); padding: 8rpx 12rpx; margin-left: 12rpx; }
+.cal-weekdays { display: flex; padding-bottom: 12rpx; }
+.cal-weekday { flex: 1; text-align: center; font-size: 24rpx; font-weight: 600; color: var(--text-secondary); }
+.cal-grid { display: flex; flex-wrap: wrap; }
+.cal-cell {
+  position: relative;
+  width: 14.2857%;
+  min-height: 100rpx;
+  padding: 6rpx 2rpx;
+  border-radius: 16rpx;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--text-primary);
+}
+.cal-cell.is-outside { opacity: .3; }
+.cal-cell.is-selected { box-shadow: inset 0 0 0 4rpx var(--accent-blue); }
+.cal-cell.is-today { box-shadow: inset 0 0 0 4rpx rgba(196, 154, 108, .7); }
+.cal-cell.is-selected.is-today { box-shadow: inset 0 0 0 4rpx var(--accent-blue), inset 0 0 0 8rpx rgba(196, 154, 108, .45); }
+.cal-dot {
+  position: absolute; top: 8rpx; right: 12rpx;
+  width: 14rpx; height: 14rpx;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 0 3rpx var(--bg-card);
+}
+.cal-day { font-size: 26rpx; font-weight: 600; line-height: 1.2; }
+.cal-lunar { font-size: 18rpx; color: var(--text-secondary); line-height: 1.2; }
+.cal-val { font-size: 20rpx; font-weight: 700; color: var(--accent-blue); line-height: 1.2; }

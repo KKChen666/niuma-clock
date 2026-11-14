@@ -79,3 +79,32 @@ export function splitWork(record, work = DEFAULT_WORK) {
   const overtime = Math.round(dur * (otMin / (e - s)) * 100) / 100;
   return { normal: Math.round((dur - overtime) * 100) / 100, overtime };
 }
+
+/**
+ * 上班打卡后应在几点提醒打下班卡（应用内横幅 / 订阅消息共用口径）。
+ * - 日班（start < end，如 09:00-18:00）：打卡未过下班点 → 当日下班点；
+ *   已过下班点才上班（加班打卡）→ 3 小时后。
+ * - 跨天班（start > end，如 22:00-06:00）：晚上打的卡 → 次日下班点；
+ *   凌晨打的卡（还在班内）→ 当日下班点；班外加班打卡 → 3 小时后。
+ * @param {{startAt:number}|null} timer 进行中的计时状态
+ * @param {{start:string,end:string}} work 班制配置
+ * @returns {number} remindAt 时间戳；timer 为空返回 0
+ */
+export const REMIND_FALLBACK_MS = 3 * 60 * 60 * 1000; // 班外加班打卡兜底：3 小时后提醒（一次合理加班段）
+
+export function clockOutRemindAt(timer, work = DEFAULT_WORK) {
+  if (!timer || !timer.startAt) return 0;
+  const w = parseWork(work);
+  const s = parseTime(w.start);
+  const e = parseTime(w.end);
+  const start = new Date(timer.startAt);
+  const hm = start.getHours() * 60 + start.getMinutes();
+  const end0 = new Date(start);
+  end0.setHours(Math.floor(e / 60), e % 60, 0, 0); // 打卡当天的下班时刻
+  if (s < e) {
+    return hm < e ? end0.getTime() : timer.startAt + REMIND_FALLBACK_MS;
+  }
+  if (hm >= s) return end0.getTime() + 86400000; // 班制前半段（夜里）→ 次日下班点
+  if (hm < e) return end0.getTime();             // 班制后半段（凌晨）→ 当日下班点
+  return timer.startAt + REMIND_FALLBACK_MS;     // 班外加班打卡
+}

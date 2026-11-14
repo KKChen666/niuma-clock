@@ -1,0 +1,9 @@
+{
+  "name": "niumaRemind",
+  "version": "1.0.0",
+  "description": "牛马时钟 · 到点推「该下班打卡啦」订阅消息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

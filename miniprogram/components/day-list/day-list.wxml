@@ -1,0 +1,30 @@
+<view wx:if="{{empty}}" class="art-empty {{compact ? 'is-compact' : ''}}">
+  <image class="art-empty-img" src="{{emptyImage}}" mode="aspectFill" />
+  <text class="art-empty-title">今天没记录，难得啊老板</text>
+  <text class="art-empty-sub">这条命今天算是暂时保住了</text>
+</view>
+
+<view wx:else class="day-list">
+  <view wx:for="{{items}}" wx:key="id" class="day-item">
+    <view class="day-item-top">
+      <view class="day-item-icon {{item.isManual ? 'is-manual' : ''}}">{{item.icon}}</view>
+      <view class="day-item-main">
+        <view class="day-item-line">
+          <text class="day-item-time">{{item.timeText}}</text>
+          <text class="day-item-dur">{{item.dur}}</text>
+        </view>
+        <view class="day-item-line day-item-tags">
+          <text wx:if="{{item.otText}}" class="day-item-ot">{{item.otText}}</text>
+          <text class="tag day-item-rank">{{item.rankIcon}} {{item.rankText}}</text>
+          <text wx:if="{{item.champ}}" class="tag tag-amber">🏆 今日最牛马一次</text>
+        </view>
+        <view class="day-item-content">{{item.content}}</view>
+        <view wx:if="{{item.note}}" class="day-item-note">备注：{{item.note}}</view>
+      </view>
+      <view class="day-item-actions">
+        <view class="icon-btn" data-id="{{item.id}}" bindtap="onEdit" hover-class="tap-fade">✎</view>
+        <view class="icon-btn is-danger" data-id="{{item.id}}" bindtap="onDelete" hover-class="tap-fade">✕</view>
+      </view>
+    </view>
+  </view>
+</view>

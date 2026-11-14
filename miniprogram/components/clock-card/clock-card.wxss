@@ -1,0 +1,200 @@
+/* ------------------------------------------------------------
+   本文件用到的 @keyframes 直接内联在这里。
+   小程序的动画关键帧按 WXSS 编译单元隔离：写在 app.wxss 里组件取不到；
+   而本项目 miniprogramRoot 为空，@import 相对路径会让开发者工具编译失败，
+   因此不用公共 wxss，每个文件自带所需关键帧（不重复、不跨文件引用）。
+   scripts/check-miniprogram.mjs 会校验「引用的关键帧必须在同一文件内定义」。
+   ------------------------------------------------------------ */
+@keyframes cell-pop {
+  0% { transform: scale(.82); }
+  55% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes value-tint {
+  0% { color: #D4943E; }
+  100% { color: #D4943E; }
+}
+@keyframes live-tick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .78; }
+}
+@keyframes ripple-out {
+  from { transform: scale(1); opacity: .9; }
+  to { transform: scale(26); opacity: 0; }
+}
+@keyframes stamp-slam {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(2.4); }
+  20% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+  72% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1.08); }
+}
+@keyframes cow-say-in {
+  from { opacity: 0; transform: translateY(-16rpx) scale(.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fill-prompt-in {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.clock-card { border-radius: 40rpx; }
+.clock-head { border-bottom: 2rpx solid var(--line-2); }
+.clock-title { display: flex; align-items: center; }
+.clock-extra { display: flex; align-items: center; }
+.clock-mascot {
+  width: 72rpx; height: 72rpx;
+  margin-left: 16rpx;
+  border-radius: 50%;
+  border: 3rpx solid var(--ring-gray);
+  background: var(--accent-blue-bg);
+}
+.is-running .clock-mascot { border-color: var(--accent-amber); box-shadow: var(--glow-amber); }
+
+.clock-body { position: relative; padding: 28rpx 32rpx 32rpx; }
+.clock-times { display: flex; align-items: stretch; margin-bottom: 20rpx; }
+.clock-cell {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  padding: 20rpx 8rpx;
+  border-radius: 24rpx;
+  background: var(--bg-card-hover);
+  border: 2rpx solid var(--border-soft);
+}
+.clock-cell-label { display: block; font-size: 22rpx; color: var(--text-secondary); }
+.clock-cell-value {
+  display: block;
+  font-size: 56rpx; font-weight: 700; line-height: 1.25;
+  color: var(--text-primary);
+}
+.clock-cell-value.is-empty { color: var(--text-tertiary); font-weight: 500; }
+.clock-cell.punch-pop { animation: cell-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.clock-cell.punch-pop .clock-cell-value { animation: value-tint 900ms ease; }
+
+.clock-span {
+  align-self: center;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 140rpx;
+  padding: 8rpx 12rpx;
+}
+.clock-span-label { font-size: 22rpx; letter-spacing: 1rpx; color: var(--text-secondary); }
+.clock-span-value { font-size: 36rpx; font-weight: 800; color: var(--text-secondary); white-space: nowrap; }
+.clock-span.has-value .clock-span-value { color: var(--accent-amber); }
+.clock-span-value.is-empty { color: var(--text-tertiary); font-weight: 500; }
+.clock-span.is-live .clock-span-value { animation: live-tick 2.4s ease-in-out infinite; }
+.clock-span.is-live.is-normal .clock-span-value { color: var(--success); }
+.clock-span.is-live.is-ot .clock-span-value { color: var(--danger); }
+.clock-span-line {
+  display: flex; align-items: center;
+  width: 100%; min-width: 112rpx;
+  margin-top: 4rpx;
+  border-top: 2rpx dashed var(--ring-gray);
+}
+
+.clock-btn {
+  position: relative;
+  overflow: hidden;
+  min-height: 112rpx;
+  font-size: 34rpx; font-weight: 700; letter-spacing: 4rpx;
+}
+.is-running .clock-btn { background: var(--accent-amber); border-color: var(--accent-amber); box-shadow: var(--btn-3d), var(--glow-amber); }
+.clock-btn-hover { transform: translateY(2rpx) scale(0.985); }
+.btn-ripple {
+  position: absolute; left: 50%; top: 50%;
+  width: 24rpx; height: 24rpx; margin: -12rpx 0 0 -12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  animation: ripple-out 550ms ease-out forwards;
+}
+
+.punch-stamp {
+  position: absolute; left: 50%; top: 42%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20rpx 52rpx;
+  border: 6rpx solid var(--accent-amber);
+  border-radius: 24rpx;
+  background: var(--bg-card);
+  color: var(--accent-amber);
+  box-shadow: var(--glow-amber);
+  pointer-events: none;
+  z-index: 5;
+  animation: stamp-slam 1500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.punch-stamp.is-out { border-color: var(--success); color: var(--success); box-shadow: var(--shadow-lg); }
+.punch-stamp-main { font-size: 42rpx; font-weight: 800; letter-spacing: 4rpx; }
+.punch-stamp-sub { font-size: 24rpx; font-weight: 600; }
+
+.cow-bubble {
+  position: absolute;
+  top: -16rpx; right: 20rpx;
+  z-index: 30;
+  max-width: 68%;
+  padding: 18rpx 24rpx;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2rpx solid var(--ring-gray);
+  border-radius: 24rpx;
+  box-shadow: var(--shadow-lg);
+  font-size: 25rpx; line-height: 1.65;
+  animation: cow-say-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.clock-cancel {
+  display: block; margin: 8rpx auto 0;
+  text-align: center;
+  color: var(--text-secondary); font-size: 24rpx;
+  padding: 12rpx;
+}
+.clock-taunt {
+  margin: 12rpx auto 0;
+  max-width: 640rpx;
+  font-size: 24rpx; line-height: 1.6;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* 下班提醒横幅：到点后常驻，轻微呼吸引起注意 */
+@keyframes remind-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 148, 62, 0.35); }
+  50% { transform: scale(1.015); box-shadow: 0 0 0 14rpx rgba(212, 148, 62, 0); }
+}
+.remind-banner {
+  margin-top: 20rpx;
+  padding: 22rpx 28rpx;
+  border-radius: 24rpx;
+  background: var(--accent-amber-bg);
+  border: 2rpx solid var(--accent-amber);
+  display: flex; flex-direction: column; align-items: center;
+  animation: remind-pulse 2s ease-in-out infinite;
+}
+.remind-banner-main {
+  font-size: 30rpx; font-weight: 800;
+  color: var(--warning);
+}
+.remind-banner-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
+.remind-hint {
+  margin: 10rpx auto 0;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.fill-prompt {
+  animation: fill-prompt-in 260ms ease-out;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 24rpx;
+  background: var(--accent-blue-bg);
+  border: 2rpx solid var(--border-soft);
+}
+.fill-prompt-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.fill-prompt-title { font-size: 24rpx; font-weight: 600; color: var(--text-primary); }
+.fill-prompt-sub { font-size: 22rpx; color: var(--text-secondary); margin-top: 6rpx; }
+.fill-prompt-actions { display: flex; align-items: center; margin-left: 12rpx; }
+.fill-close { padding: 8rpx 12rpx; color: var(--text-tertiary); font-size: 24rpx; }

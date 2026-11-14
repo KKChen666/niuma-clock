@@ -1,0 +1,123 @@
+/* 通栏贴底 dock（对齐微信 tabBar）：
+   背景铺满整个宽度并一直延伸到屏幕最底部，安全区也由同一底色覆盖，
+   图标在上、文字在下；不再用左右留白的悬浮胶囊。
+
+   图标：双态 SVG（线性 / 填充）经 CSS mask 上色，颜色跟随 currentColor
+   （即 var(--text-secondary) → var(--accent-blue)），亮暗主题自动适配。
+   切换时线性层淡出、填充层以「图标动画库」式弹性动效弹入（每个图标
+   一套专属关键帧：打卡上抛、日历摆动、奖杯双弹、数据柱长）。
+   注意：@keyframes 必须内联在本文件（WXSS 编译单元隔离，见 README）。
+   SVG 源文件在仓库 assets/tab-icons/，base64 mask 由
+   scripts/build-tab-icons.mjs 注入下方 @icons 区块，勿手改该区块。 */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12rpx 0 calc(10rpx + env(safe-area-inset-bottom));
+  background: var(--tabbar-bg);
+  border-top: 2rpx solid var(--border-soft);
+  box-shadow: 0 -4rpx 20rpx rgba(45, 55, 72, 0.04);
+  transition: background 260ms ease;
+  z-index: 30;
+}
+.tab-segmented {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 0;
+  color: var(--text-secondary);
+  transition: color 180ms ease;
+}
+.tab-icon {
+  position: relative;
+  width: 60rpx;
+  height: 60rpx;
+  margin-bottom: 2rpx;
+  border-radius: 30rpx;
+  background: transparent;
+  transition: background 180ms ease;
+}
+.tab-label {
+  font-size: 22rpx;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.tab-item.is-active { color: var(--accent-blue); }
+.tab-item.is-active .tab-icon { background: var(--accent-blue-bg); }
+.tab-item.is-active .tab-label { font-weight: 700; }
+.tab-hover { opacity: .7; }
+
+/* ---- 双态图标层：mask 上色，currentColor 跟随主题 ---- */
+.ic {
+  position: absolute;
+  left: 6rpx;
+  top: 6rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  transition: opacity 180ms ease, transform 240ms cubic-bezier(.34, 1.56, .64, 1);
+}
+.ic-show { opacity: 1; transform: scale(1); }
+.ic-hide { opacity: 0; transform: scale(.55); }
+
+/* 激活弹入：每个图标一套专属动效（useAnimations 风格） */
+.ic-play.ic-record { animation: ic-anim-record 360ms cubic-bezier(.34, 1.56, .64, 1) both; }
+.ic-play.ic-calendar { animation: ic-anim-calendar 380ms cubic-bezier(.34, 1.56, .64, 1) both; }
+.ic-play.ic-niuma { animation: ic-anim-niuma 480ms cubic-bezier(.34, 1.56, .64, 1) both; }
+.ic-play.ic-data { animation: ic-anim-data 360ms cubic-bezier(.34, 1.56, .64, 1) both; }
+
+/* 打卡：像笔尖落下——带倾角上抛入位 */
+@keyframes ic-anim-record {
+  0% { opacity: 0; transform: translateY(10rpx) rotate(-10deg) scale(.6); }
+  55% { opacity: 1; transform: translateY(-4rpx) rotate(3deg) scale(1.14); }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+/* 日历：页角翻动——小幅摆动两次 */
+@keyframes ic-anim-calendar {
+  0% { opacity: 0; transform: scale(.5) rotate(0); }
+  40% { opacity: 1; transform: scale(1.16) rotate(-9deg); }
+  65% { transform: scale(1.02) rotate(6deg); }
+  85% { transform: scale(1.04) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+/* 牛马：举杯庆祝——双弹 */
+@keyframes ic-anim-niuma {
+  0% { opacity: 0; transform: scale(.3) translateY(8rpx); }
+  32% { opacity: 1; transform: scale(1.18) translateY(-6rpx); }
+  52% { transform: scale(.9) translateY(0); }
+  72% { transform: scale(1.08) translateY(-3rpx); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* 数据：柱状生长——自底部长起 */
+@keyframes ic-anim-data {
+  0% { opacity: 0; transform: scale(.8, .3); }
+  55% { opacity: 1; transform: scale(1.02, 1.14); }
+  100% { opacity: 1; transform: scale(1, 1); }
+}
+
+/* @icons:start（scripts/build-tab-icons.mjs 注入，勿手改） */
+.ic-line.ic-record { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHBhdGggZD0iTTYgM2g4bDQgNHYxMmEyIDIgMCAwIDEtMiAySDZhMiAyIDAgMCAxLTItMlY1YTIgMiAwIDAgMSAyLTJaIi8+CiAgPHBhdGggZD0iTTE0IDN2NGg0Ii8+CiAgPHBhdGggZD0iTTggMTJoNiIvPgogIDxwYXRoIGQ9Ik04IDE2aDQiLz4KPC9zdmc+Cg=="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHBhdGggZD0iTTYgM2g4bDQgNHYxMmEyIDIgMCAwIDEtMiAySDZhMiAyIDAgMCAxLTItMlY1YTIgMiAwIDAgMSAyLTJaIi8+CiAgPHBhdGggZD0iTTE0IDN2NGg0Ii8+CiAgPHBhdGggZD0iTTggMTJoNiIvPgogIDxwYXRoIGQ9Ik04IDE2aDQiLz4KPC9zdmc+Cg=="); }
+.ic-fill.ic-record { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNNiAzaDhsNCA0djEyYTIgMiAwIDAgMS0yIDJINmEyIDIgMCAwIDEtMi0yVjVhMiAyIDAgMCAxIDItMlpNNy44IDExaDguNHYySDcuOHpNNy44IDE1aDUuNHYySDcuOHoiLz4KPC9zdmc+Cg=="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNNiAzaDhsNCA0djEyYTIgMiAwIDAgMS0yIDJINmEyIDIgMCAwIDEtMi0yVjVhMiAyIDAgMCAxIDItMlpNNy44IDExaDguNHYySDcuOHpNNy44IDE1aDUuNHYySDcuOHoiLz4KPC9zdmc+Cg=="); }
+.ic-line.ic-calendar { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHJlY3QgeD0iMy41IiB5PSI1IiB3aWR0aD0iMTciIGhlaWdodD0iMTUuNSIgcng9IjIuNSIvPgogIDxwYXRoIGQ9Ik0zLjUgOS41aDE3Ii8+CiAgPHBhdGggZD0iTTggM3Y0Ii8+CiAgPHBhdGggZD0iTTE2IDN2NCIvPgogIDxjaXJjbGUgY3g9IjgiIGN5PSIxMy44IiByPSIxIiBmaWxsPSIjMDAwIiBzdHJva2U9Im5vbmUiLz4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEzLjgiIHI9IjEiIGZpbGw9IiMwMDAiIHN0cm9rZT0ibm9uZSIvPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMTMuOCIgcj0iMSIgZmlsbD0iIzAwMCIgc3Ryb2tlPSJub25lIi8+CiAgPGNpcmNsZSBjeD0iOCIgY3k9IjE3LjIiIHI9IjEiIGZpbGw9IiMwMDAiIHN0cm9rZT0ibm9uZSIvPgogIDxjaXJjbGUgY3g9IjEyIiBjeT0iMTcuMiIgcj0iMSIgZmlsbD0iIzAwMCIgc3Ryb2tlPSJub25lIi8+Cjwvc3ZnPgo="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHJlY3QgeD0iMy41IiB5PSI1IiB3aWR0aD0iMTciIGhlaWdodD0iMTUuNSIgcng9IjIuNSIvPgogIDxwYXRoIGQ9Ik0zLjUgOS41aDE3Ii8+CiAgPHBhdGggZD0iTTggM3Y0Ii8+CiAgPHBhdGggZD0iTTE2IDN2NCIvPgogIDxjaXJjbGUgY3g9IjgiIGN5PSIxMy44IiByPSIxIiBmaWxsPSIjMDAwIiBzdHJva2U9Im5vbmUiLz4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEzLjgiIHI9IjEiIGZpbGw9IiMwMDAiIHN0cm9rZT0ibm9uZSIvPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMTMuOCIgcj0iMSIgZmlsbD0iIzAwMCIgc3Ryb2tlPSJub25lIi8+CiAgPGNpcmNsZSBjeD0iOCIgY3k9IjE3LjIiIHI9IjEiIGZpbGw9IiMwMDAiIHN0cm9rZT0ibm9uZSIvPgogIDxjaXJjbGUgY3g9IjEyIiBjeT0iMTcuMiIgcj0iMSIgZmlsbD0iIzAwMCIgc3Ryb2tlPSJub25lIi8+Cjwvc3ZnPgo="); }
+.ic-fill.ic-calendar { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNOCAzaDJ2M0g4ek0xNCAzaDJ2M2gtMnpNNS41IDVoMTNBMi41IDIuNSAwIDAgMSAyMSA3LjVWMThhMi41IDIuNSAwIDAgMS0yLjUgMi41aC0xM0EyLjUgMi41IDAgMCAxIDMgMThWNy41QTIuNSAyLjUgMCAwIDEgNS41IDVaTTMgOC42aDE4djJIM3pNNy42IDEzLjhhMS4xIDEuMSAwIDEgMCAwIDIuMiAxLjEgMS4xIDAgMSAwIDAtMi4yWk0xMiAxMy44YTEuMSAxLjEgMCAxIDAgMCAyLjIgMS4xIDEuMSAwIDEgMCAwLTIuMlpNMTYuNCAxMy44YTEuMSAxLjEgMCAxIDAgMCAyLjIgMS4xIDEuMSAwIDEgMCAwLTIuMloiLz4KPC9zdmc+Cg=="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNOCAzaDJ2M0g4ek0xNCAzaDJ2M2gtMnpNNS41IDVoMTNBMi41IDIuNSAwIDAgMSAyMSA3LjVWMThhMi41IDIuNSAwIDAgMS0yLjUgMi41aC0xM0EyLjUgMi41IDAgMCAxIDMgMThWNy41QTIuNSAyLjUgMCAwIDEgNS41IDVaTTMgOC42aDE4djJIM3pNNy42IDEzLjhhMS4xIDEuMSAwIDEgMCAwIDIuMiAxLjEgMS4xIDAgMSAwIDAtMi4yWk0xMiAxMy44YTEuMSAxLjEgMCAxIDAgMCAyLjIgMS4xIDEuMSAwIDEgMCAwLTIuMlpNMTYuNCAxMy44YTEuMSAxLjEgMCAxIDAgMCAyLjIgMS4xIDEuMSAwIDEgMCAwLTIuMloiLz4KPC9zdmc+Cg=="); }
+.ic-line.ic-niuma { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHBhdGggZD0iTTggNGg4djVhNCA0IDAgMCAxLTggMFY0WiIvPgogIDxwYXRoIGQ9Ik04IDVINS41YTIuNSAyLjUgMCAwIDAgMi41IDQiLz4KICA8cGF0aCBkPSJNMTYgNWgyLjVhMi41IDIuNSAwIDAgMS0yLjUgNCIvPgogIDxwYXRoIGQ9Ik0xMiAxM3YzIi8+CiAgPHBhdGggZD0iTTkgMjBoNmwtMS00aC00WiIvPgo8L3N2Zz4K"); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPHBhdGggZD0iTTggNGg4djVhNCA0IDAgMCAxLTggMFY0WiIvPgogIDxwYXRoIGQ9Ik04IDVINS41YTIuNSAyLjUgMCAwIDAgMi41IDQiLz4KICA8cGF0aCBkPSJNMTYgNWgyLjVhMi41IDIuNSAwIDAgMS0yLjUgNCIvPgogIDxwYXRoIGQ9Ik0xMiAxM3YzIi8+CiAgPHBhdGggZD0iTTkgMjBoNmwtMS00aC00WiIvPgo8L3N2Zz4K"); }
+.ic-fill.ic-niuma { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZD0iTTggNGg4djVhNCA0IDAgMCAxLTggMFY0WiIvPgogIDxwYXRoIGQ9Ik0xMSAxM2gydjNoLTJ6TTkgMjBoNmwtMS00aC00WiIvPgogIDxwYXRoIGQ9Ik04IDUuMkg1LjhBMi42IDIuNiAwIDAgMCA4IDkuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTE2IDUuMmgyLjJBMi42IDIuNiAwIDAgMSAxNiA5LjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZD0iTTggNGg4djVhNCA0IDAgMCAxLTggMFY0WiIvPgogIDxwYXRoIGQ9Ik0xMSAxM2gydjNoLTJ6TTkgMjBoNmwtMS00aC00WiIvPgogIDxwYXRoIGQ9Ik04IDUuMkg1LjhBMi42IDIuNiAwIDAgMCA4IDkuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTE2IDUuMmgyLjJBMi42IDIuNiAwIDAgMSAxNiA5LjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K"); }
+.ic-line.ic-data { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPGVsbGlwc2UgY3g9IjEyIiBjeT0iNS41IiByeD0iNyIgcnk9IjIuNSIvPgogIDxwYXRoIGQ9Ik01IDUuNXYxM2MwIDEuMzggMy4xMyAyLjUgNyAyLjVzNy0xLjEyIDctMi41di0xMyIvPgogIDxwYXRoIGQ9Ik01IDEyYzAgMS4zOCAzLjEzIDIuNSA3IDIuNXM3LTEuMTIgNy0yLjUiLz4KPC9zdmc+Cg=="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPGVsbGlwc2UgY3g9IjEyIiBjeT0iNS41IiByeD0iNyIgcnk9IjIuNSIvPgogIDxwYXRoIGQ9Ik01IDUuNXYxM2MwIDEuMzggMy4xMyAyLjUgNyAyLjVzNy0xLjEyIDctMi41di0xMyIvPgogIDxwYXRoIGQ9Ik01IDEyYzAgMS4zOCAzLjEzIDIuNSA3IDIuNXM3LTEuMTIgNy0yLjUiLz4KPC9zdmc+Cg=="); }
+.ic-fill.ic-data { -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZD0iTTUgNS41QzUgNC4xMiA4LjEzIDMgMTIgM3M3IDEuMTIgNyAyLjV2MTNjMCAxLjM4LTMuMTMgMi41LTcgMi41cy03LTEuMTItNy0yLjV6Ii8+Cjwvc3ZnPgo="); mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwMCI+CiAgPHBhdGggZD0iTTUgNS41QzUgNC4xMiA4LjEzIDMgMTIgM3M3IDEuMTIgNyAyLjV2MTNjMCAxLjM4LTMuMTMgMi41LTcgMi41cy03LTEuMTItNy0yLjV6Ii8+Cjwvc3ZnPgo="); }
+/* @icons:end */

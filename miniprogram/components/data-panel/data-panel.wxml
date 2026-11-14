@@ -1,0 +1,51 @@
+<view class="panel">
+  <view class="panel-head"><text>数据概览</text></view>
+  <view class="panel-body">
+    <view class="stat-three">
+      <view class="stat-card"><text class="stat-title">记录条数</text><text class="stat-value">{{count}}<text class="stat-suffix"> 笔</text></text></view>
+      <view class="stat-card"><text class="stat-title">累计加班</text><text class="stat-value">{{totalHours}}<text class="stat-suffix"> h</text></text></view>
+    </view>
+    <view class="desc-row"><text class="desc-label">日期范围</text><text class="desc-value">{{firstDate}} ~ {{lastDate}}</text></view>
+    <view class="desc-row"><text class="desc-label">合计</text><text class="desc-value">{{totalText}}</text></view>
+  </view>
+</view>
+
+<view class="panel">
+  <view class="panel-head"><text>上下班时间（加班口径）</text></view>
+  <view class="panel-body">
+    <text class="data-note">请填你自己的上下班时间，下班时间之后算加班。</text>
+    <view class="work-presets">
+      <view
+        wx:for="{{presets}}"
+        wx:key="key"
+        class="btn btn-sm preset"
+        data-key="{{item.key}}"
+        data-label="{{item.label}}"
+        data-start="{{item.start}}"
+        data-end="{{item.end}}"
+        bindtap="onPreset"
+       hover-class="btn-hover">{{item.label}} {{item.start}}-{{item.end}}</view>
+    </view>
+    <view class="work-form">
+      <picker mode="time" value="{{draftStart || '09:00'}}" bindchange="onStart">
+        <view class="picker-value"><text class="{{draftStart ? '' : 'picker-placeholder'}}">{{draftStart || '上班时间'}}</text></view>
+      </picker>
+      <text class="shift-sep">-</text>
+      <picker mode="time" value="{{draftEnd || '18:00'}}" bindchange="onEnd">
+        <view class="picker-value"><text class="{{draftEnd ? '' : 'picker-placeholder'}}">{{draftEnd || '下班时间'}}</text></view>
+      </picker>
+      <view class="btn btn-primary btn-sm" bindtap="onSaveWork" hover-class="btn-hover">保存</view>
+    </view>
+  </view>
+</view>
+
+<view class="panel">
+  <view class="panel-head"><text>关于数据</text></view>
+  <view class="panel-body">
+    <view class="about-banner">
+      <image class="about-img" src="{{banner}}" mode="aspectFill" />
+      <view class="about-mask"></view>
+      <text class="about-sticky">今日也要耍牛马</text>
+    </view>
+  </view>
+</view>

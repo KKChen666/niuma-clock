@@ -1,0 +1,9 @@
+{
+  "name": "niumaSync",
+  "version": "1.0.0",
+  "description": "牛马时钟 · 按 openid 同步整本加班记录",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

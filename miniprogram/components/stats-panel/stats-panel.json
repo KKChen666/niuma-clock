@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "styleIsolation": "apply-shared",
+  "usingComponents": {
+    "week-strip": "../week-strip/week-strip",
+    "bar-chart": "../bar-chart/bar-chart"
+  }
+}

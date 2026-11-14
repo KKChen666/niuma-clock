@@ -1,0 +1,52 @@
+<view class="panel">
+  <view class="panel-head"><text>{{title}}</text></view>
+  <view class="panel-body">
+    <view class="stats-toolbar">
+      <view class="stats-seg">
+        <view
+          wx:for="{{views}}"
+          wx:key="key"
+          class="stats-seg-item {{view === item.key ? 'is-active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="onView"
+         hover-class="tap-fade">{{item.label}}</view>
+      </view>
+      <picker mode="date" fields="{{pickerFields}}" value="{{pickerValue}}" bindchange="onAnchor">
+        <view class="stats-picker">{{pickerValue}} ▾</view>
+      </picker>
+    </view>
+
+    <view class="stat-three">
+      <view class="stat-card"><text class="stat-title">总时长</text><text class="stat-value">{{total}}<text class="stat-suffix"> h</text></text></view>
+      <view class="stat-card"><text class="stat-title">加班天数</text><text class="stat-value">{{daysWith}}<text class="stat-suffix"> 天</text></text></view>
+      <view class="stat-card"><text class="stat-title">日均</text><text class="stat-value">{{perDay}}<text class="stat-suffix"> h</text></text></view>
+    </view>
+
+    <view wx:if="{{view === 'year'}}" class="ratio-line">
+      <text>全年 <text class="ratio-strong">{{daysWith}}</text> 天有加班（{{ratio}}%）</text>
+      <view class="ratio-track"><view class="ratio-fill" style="width: {{ratio}}%;"></view></view>
+    </view>
+
+    <week-strip wx:if="{{view === 'week'}}" anchor="{{anchor}}" />
+    <block wx:else>
+      <bar-chart wx:if="{{bars.length > 0}}" bars="{{bars}}" bind:bartap="onBarTap" />
+      <view wx:else class="art-empty is-compact">
+        <image class="art-empty-img" src="{{fishImg}}" mode="aspectFill" />
+        <text class="art-empty-title">这段时间还没记</text>
+        <text class="art-empty-sub">趁着没加班，赶紧歇会儿</text>
+      </view>
+    </block>
+  </view>
+</view>
+
+<view wx:if="{{view === 'year'}}" class="panel">
+  <view class="panel-head"><text>分月汇总</text></view>
+  <view class="panel-body">
+    <view class="month-row month-head">
+      <text>月份</text><text>加班时长</text><text>加班天数</text>
+    </view>
+    <view wx:for="{{months}}" wx:key="monthLabel" class="month-row">
+      <text>{{item.monthLabel}}</text><text>{{item.valueText}}</text><text>{{item.daysText}}</text>
+    </view>
+  </view>
+</view>

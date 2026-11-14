@@ -1,0 +1,289 @@
+/* ============================================================
+   牛马时钟 · 小程序版全局样式
+   亮暗双主题用 CSS 变量，.theme-light / .theme-dark 挂在页面根节点，
+   变量会沿节点树继承到自定义组件内部（组件 styleIsolation: apply-shared）。
+   尺寸按 web 版 px × 2 换算成 rpx（375px 设计稿下 1px = 2rpx）。
+
+   注意：动画关键帧不放在这里，也不能用 @import 引公共 wxss
+   —— 前者组件取不到，后者在本项目（miniprogramRoot 为空）会让
+   开发者工具 WXSS 编译失败。各 wxss 自带所需关键帧，见文件头说明。
+   ============================================================ */
+
+.theme-light {
+  --bg-primary: #F0F2F5;
+  --bg-secondary: #E8ECF1;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFB;
+  --bg-header-start: #D8DFE8;
+  --bg-header-end: #E8ECF1;
+
+  --text-primary: #2D3748;
+  --text-secondary: #718096;
+  --text-tertiary: #A0AEC0;
+  --text-inverse: #FFFFFF;
+
+  --accent-blue: #5B7FA6;
+  --accent-blue-bg: #EDF2F7;
+  --accent-amber: #C49A6C;
+  --accent-amber-bg: #F7F0E8;
+
+  --success: #68B89A;
+  --warning: #D4943E;
+  --danger: #D4736C;
+
+  --ring-gray: #CBD5E0;
+  --border-soft: #E2E8F0;
+  --line-2: #EDF1F6;
+  --track-soft: #E4EAF1;
+  --tabbar-bg: #FFFFFF;
+
+  --glow-blue: none;
+  --glow-amber: none;
+  --glow-card: none;
+  --glow-btn: none;
+
+  --shadow-sm: 0 2rpx 6rpx rgba(45, 55, 72, 0.06);
+  --shadow-md: 0 4rpx 16rpx rgba(45, 55, 72, 0.08);
+  --shadow-lg: 0 8rpx 32rpx rgba(45, 55, 72, 0.10);
+  --btn-3d: 0 4rpx 8rpx rgba(45, 55, 72, 0.10), 0 8rpx 24rpx rgba(45, 55, 72, 0.08), inset 0 2rpx 0 rgba(255, 255, 255, 0.6);
+  --btn-3d-pressed: 0 2rpx 4rpx rgba(45, 55, 72, 0.12), inset 0 4rpx 8rpx rgba(45, 55, 72, 0.06);
+}
+
+.theme-dark {
+  --bg-primary: #151820;
+  --bg-secondary: #1A1E28;
+  --bg-card: #1E2230;
+  --bg-card-hover: #252A38;
+  --bg-header-start: #1A1E28;
+  --bg-header-end: #252A38;
+
+  --text-primary: #E2E8F0;
+  --text-secondary: #8892A4;
+  --text-tertiary: #5A6478;
+  --text-inverse: #151820;
+
+  --accent-blue: #4D8BFF;
+  --accent-blue-bg: #1E2A40;
+  --accent-amber: #D4943E;
+  --accent-amber-bg: #2A2218;
+
+  --success: #4CAF88;
+  --warning: #E8A84C;
+  --danger: #E06B63;
+
+  --ring-gray: #2A3040;
+  --border-soft: #2A3040;
+  --line-2: #252B38;
+  --track-soft: #2A3040;
+  --tabbar-bg: #1E2230;
+
+  --glow-blue: 0 0 24rpx rgba(77, 139, 255, 0.4);
+  --glow-amber: 0 0 24rpx rgba(212, 148, 62, 0.3);
+  --glow-card: 0 0 0 2rpx rgba(77, 139, 255, 0.1), 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+  --glow-btn: 0 0 32rpx rgba(77, 139, 255, 0.3), 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+
+  --shadow-sm: 0 2rpx 6rpx rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+  --btn-3d: 0 4rpx 8rpx rgba(0, 0, 0, 0.25), 0 8rpx 24rpx rgba(0, 0, 0, 0.2), inset 0 2rpx 0 rgba(255, 255, 255, 0.08);
+  --btn-3d-pressed: 0 2rpx 4rpx rgba(0, 0, 0, 0.3), inset 0 4rpx 8rpx rgba(0, 0, 0, 0.25);
+}
+
+page {
+  background: #F0F2F5;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+view, text, image, button, input, scroll-view, textarea {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  min-height: 100vh;
+  /* 底部留白 = 通栏 dock 高度 + 安全区，保证内容不被贴底导航压住 */
+  padding: 24rpx 24rpx calc(200rpx + env(safe-area-inset-bottom));
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.app-header { padding: 0; }
+.hero-banner {
+  display: flex;
+  align-items: center;
+  padding: 32rpx 32rpx 36rpx;
+  border-radius: 40rpx;
+  background: linear-gradient(135deg, var(--bg-header-start) 0%, var(--bg-header-end) 100%);
+  box-shadow: var(--shadow-md), var(--glow-card);
+}
+.brand-copy { display: flex; flex-direction: column; min-width: 0; flex: 1; margin-left: 24rpx; }
+.brand-name {
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: var(--text-secondary);
+}
+.hero-greet { font-size: 48rpx; font-weight: 600; line-height: 1.25; color: var(--text-primary); }
+.hero-date { font-size: 24rpx; color: var(--text-secondary); }
+.brand-art-avatar {
+  flex: none;
+  width: 96rpx; height: 96rpx;
+  border-radius: 50%;
+  border: 4rpx solid #FFFFFF;
+  background: var(--accent-blue-bg);
+  box-shadow: 0 6rpx 20rpx rgba(45, 55, 72, 0.18);
+}
+.theme-dark .brand-art-avatar { border-color: rgba(255, 255, 255, 0.12); }
+.theme-btn {
+  flex: none;
+  width: 72rpx; height: 72rpx;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 32rpx;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.page { display: flex; flex-direction: column; margin-top: 20rpx; }
+.is-hidden { display: none !important; }
+.page-extra { display: flex; flex-direction: column; margin-top: 8rpx; }
+.muted { color: var(--text-secondary); font-size: 24rpx; }
+
+/* ---------- 卡片 ---------- */
+.panel {
+  border-radius: 32rpx;
+  border: 2rpx solid var(--border-soft);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 80rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx; font-weight: 600;
+  border-bottom: 2rpx solid var(--line-2);
+  color: var(--text-primary);
+}
+.panel-body { padding: 28rpx; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 72rpx;
+  padding: 0 28rpx;
+  font-size: 26rpx;
+  border-radius: 24rpx;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2rpx solid var(--border-soft);
+}
+.btn::after { border: none; }
+.btn-primary {
+  background: var(--accent-blue);
+  color: #FFFFFF;
+  border-color: var(--accent-blue);
+  font-weight: 600;
+}
+.btn-amber { background: var(--accent-amber); border-color: var(--accent-amber); color: #FFFFFF; }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-block { width: 100%; }
+.btn-pill { border-radius: 999rpx; }
+.btn-sm { min-height: 56rpx; font-size: 24rpx; padding: 0 20rpx; }
+.btn-3d, .clock-btn, .btn-save {
+  box-shadow: var(--btn-3d), var(--glow-btn);
+  border-radius: 999rpx;
+}
+
+/* ---------- 统计小卡 ---------- */
+.stat-three { display: flex; margin-bottom: 20rpx; }
+.stat-card {
+  flex: 1;
+  min-width: 0;
+  margin-right: 16rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 24rpx;
+  background: var(--accent-blue-bg);
+  border: 2rpx solid transparent;
+}
+.stat-card:last-child { margin-right: 0; }
+.stat-title { font-size: 24rpx; color: var(--text-secondary); }
+.stat-value { font-size: 44rpx; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+.stat-suffix { font-size: 24rpx; color: var(--text-secondary); }
+
+/* ---------- 标签 / chip ---------- */
+.tag {
+  display: inline-flex; align-items: center;
+  padding: 2rpx 16rpx;
+  font-size: 22rpx;
+  line-height: 32rpx;
+  border-radius: 999rpx;
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+}
+.tag-amber { background: var(--accent-amber-bg); color: var(--accent-amber); }
+.chip {
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid var(--border-soft);
+  background: var(--accent-blue-bg);
+  color: var(--text-secondary);
+}
+.chip.is-active { background: var(--accent-blue); border-color: var(--accent-blue); color: var(--text-inverse); }
+
+/* ---------- 空状态插画 ---------- */
+.art-empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28rpx 16rpx 20rpx;
+  text-align: center;
+}
+.art-empty-img {
+  width: 216rpx; height: 216rpx;
+  border-radius: 50%;
+  border: 6rpx solid var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  background: var(--accent-blue-bg);
+}
+.art-empty.is-compact { padding: 20rpx 16rpx 12rpx; }
+.art-empty.is-compact .art-empty-img { width: 144rpx; height: 144rpx; border-width: 4rpx; }
+.art-empty-title { display: block; font-size: 28rpx; font-weight: 700; color: var(--text-primary); margin-top: 16rpx; }
+.art-empty-sub { display: block; font-size: 24rpx; color: var(--text-secondary); margin-top: 8rpx; }
+
+/* ---------- 表单 ---------- */
+.form-label { font-size: 24rpx; color: var(--text-secondary); margin-bottom: 8rpx; }
+.form-item { margin-bottom: 24rpx; }
+.input, .picker-value {
+  width: 100%;
+  min-height: 72rpx;
+  padding: 12rpx 20rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+  border: 2rpx solid var(--border-soft);
+  border-radius: 20rpx;
+}
+.picker-value { display: flex; align-items: center; justify-content: space-between; }
+.picker-placeholder { color: var(--text-tertiary); }
+
+/* ---------- 动画 ---------- */
+/* 关键帧内联在各自 wxss 里。切页淡入不挂常驻 .page：四页常驻挂载
+   只切 display，常驻 animation 不会重播，改由 .page.is-active 触发。 */
+
+/* ---------- 亮暗主题切换过渡（对应 web 版 transition: background/color 300ms） ---------- */
+.app-shell,
+.panel,
+.btn,
+.input,
+.picker-value,
+.stat-card {
+  transition: background 260ms ease, color 260ms ease,
+              border-color 260ms ease, box-shadow 260ms ease;
+}
+
+/* 通用按压反馈：小程序不支持 :active 伪类，交互元素在 WXML 上用
+   hover-class 引用这两个类；app.wxss 的类选择器在 apply-shared 下
+   可作用于组件内节点（现有 .btn / .panel 即依赖此行为）。 */
+.btn-hover { opacity: .82; transform: translateY(2rpx) scale(.985); }
+.tap-fade { opacity: .68; }

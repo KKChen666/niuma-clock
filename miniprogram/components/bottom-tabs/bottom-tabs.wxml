@@ -1,0 +1,18 @@
+<view class="tabbar">
+  <view class="tab-segmented">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tab-item {{active === item.key ? 'is-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onTap"
+      hover-class="tab-hover"
+    >
+      <view class="tab-icon">
+        <view class="ic ic-line {{item.cls}} {{active === item.key ? 'ic-hide' : 'ic-show'}}"></view>
+        <view class="ic ic-fill {{item.cls}} {{active === item.key ? 'ic-show ic-play' : 'ic-hide'}}"></view>
+      </view>
+      <text class="tab-label">{{item.label}}</text>
+    </view>
+  </view>
+</view>

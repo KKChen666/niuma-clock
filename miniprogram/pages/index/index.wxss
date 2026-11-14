@@ -1,0 +1,99 @@
+/* ------------------------------------------------------------
+   本文件用到的 @keyframes 直接内联在这里。
+   小程序的动画关键帧按 WXSS 编译单元隔离：写在 app.wxss 里组件取不到；
+   而本项目 miniprogramRoot 为空，@import 相对路径会让开发者工具编译失败，
+   因此不用公共 wxss，每个文件自带所需关键帧（不重复、不跨文件引用）。
+   scripts/check-miniprogram.mjs 会校验「引用的关键帧必须在同一文件内定义」。
+   ------------------------------------------------------------ */
+@keyframes page-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes undo-in {
+  from { opacity: 0; transform: translateY(28rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes confetti-fall {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translate(0, 120vh) rotate(540deg); }
+}
+@keyframes confetti-fall-l {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-96rpx, 120vh) rotate(-460deg); }
+}
+@keyframes confetti-fall-r {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translate(140rpx, 120vh) rotate(640deg); }
+}
+@keyframes confetti-pop {
+  0% { opacity: 0; transform: translate(-50%, -38%) scale(.7); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  76% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(.96); }
+}
+
+/* 页面级：切页淡入 / 撤销条 / 彩带（其余样式在 app.wxss 与各组件内） */
+
+/* 四页常驻挂载，用 is-active 的「从无到有」触发 animation 重播；
+   挂在常驻 .page 上只在首帧播一次，切 tab 不会再淡入。 */
+.page.is-active { animation: page-fade 150ms ease; }
+
+.undo-bar {
+  animation: undo-in 240ms ease-out;
+  position: fixed;
+  left: 24rpx; right: 24rpx;
+  bottom: calc(140rpx + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20rpx 28rpx;
+  border-radius: 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-soft);
+  box-shadow: var(--shadow-lg);
+}
+.undo-text { font-size: 26rpx; color: var(--text-primary); }
+.undo-btn { font-size: 26rpx; color: var(--accent-blue); font-weight: 700; padding: 8rpx 16rpx; }
+
+.confetti-host {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+.confetti-bit {
+  position: absolute; top: -28rpx;
+  width: 14rpx; height: 22rpx;
+  border-radius: 4rpx;
+  opacity: 0;
+  animation: confetti-fall 1.7s ease-in forwards;
+}
+/* 三个横向漂移变体，对应 web 版 celebrate() 的 --drift */
+.confetti-bit.drift-l { animation-name: confetti-fall-l; }
+.confetti-bit.drift-r { animation-name: confetti-fall-r; }
+.confetti-pop {
+  position: fixed; top: 38%; left: 50%;
+  display: flex; flex-direction: column; align-items: center;
+  transform: translate(-50%, -50%);
+  animation: confetti-pop 1.6s ease-out forwards;
+}
+.confetti-img {
+  width: 152rpx; height: 152rpx;
+  border-radius: 50%;
+  border: 6rpx solid var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+.confetti-text {
+  margin-top: 16rpx;
+  padding: 10rpx 26rpx;
+  background: var(--accent-blue);
+  color: #FFFFFF;
+  font-size: 24rpx; font-weight: 600;
+  border-radius: 999rpx;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}

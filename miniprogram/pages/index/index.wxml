@@ -1,0 +1,73 @@
+<view class="app-shell {{themeClass}}">
+  <view class="app-header">
+    <view class="hero-banner">
+      <image class="brand-art-avatar" src="{{avatar}}" mode="aspectFill" />
+      <view class="brand-copy">
+        <text class="brand-name">牛马时钟 · 打卡记加班</text>
+        <text class="hero-greet">{{greet}}，打工人</text>
+        <text class="hero-date">{{dateLine}}</text>
+      </view>
+      <view class="theme-btn" bindtap="onToggleTheme" hover-class="tap-fade">{{themeIcon}}</view>
+    </view>
+  </view>
+
+  <!-- 打卡页：打卡卡片 → 今日明细 → 补录表单 -->
+  <view class="page {{activeTab !== 'record' ? 'is-hidden' : 'is-active'}}">
+    <clock-card></clock-card>
+    <view class="page-extra">
+      <view class="panel">
+        <view class="panel-head">
+          <text>今日明细</text>
+          <text class="muted">{{todayCount}} 笔 · 共 {{todayTotal}}</text>
+        </view>
+        <view class="panel-body"><day-list date="{{today}}"></day-list></view>
+      </view>
+      <entry-form></entry-form>
+    </view>
+  </view>
+
+  <!-- 日历页：月历 → 选中日明细 → 时段汇总 -->
+  <view class="page {{activeTab !== 'calendar' ? 'is-hidden' : 'is-active'}}">
+    <calendar-panel></calendar-panel>
+    <view class="panel">
+      <view class="panel-head">
+        <text>{{selectedDate}} 明细</text>
+        <text class="muted">{{selectedCount}} 笔 · 共 {{selectedTotal}}</text>
+      </view>
+      <view class="panel-body"><day-list date="{{selectedDate}}" image="{{weekendImg}}"></day-list></view>
+    </view>
+    <stats-panel></stats-panel>
+  </view>
+
+  <!-- 牛马页 -->
+  <view class="page {{activeTab !== 'niuma' ? 'is-hidden' : 'is-active'}}">
+    <niuma-panel></niuma-panel>
+  </view>
+
+  <!-- 数据页 -->
+  <view class="page {{activeTab !== 'data' ? 'is-hidden' : 'is-active'}}">
+    <data-panel></data-panel>
+  </view>
+
+  <bottom-tabs></bottom-tabs>
+
+  <!-- 撤销条 -->
+  <view wx:if="{{undoBar.show}}" class="undo-bar">
+    <text class="undo-text">{{undoBar.text}}</text>
+    <view class="undo-btn" bindtap="onUndo" hover-class="tap-fade">撤销</view>
+  </view>
+
+  <!-- 打卡 / 保存彩带 -->
+  <view wx:if="{{confetti.show}}" class="confetti-host">
+    <view
+      wx:for="{{confetti.bits}}"
+      wx:key="id"
+      class="confetti-bit {{item.drift}}"
+      style="left: {{item.left}}%; background: {{item.color}}; animation-delay: {{item.delay}}s;"
+    ></view>
+    <view class="confetti-pop">
+      <image class="confetti-img" src="{{celebrateImg}}" mode="aspectFill" />
+      <text class="confetti-text">{{confetti.text}}</text>
+    </view>
+  </view>
+</view>

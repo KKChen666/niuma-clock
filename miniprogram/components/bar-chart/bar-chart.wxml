@@ -1,0 +1,16 @@
+<scroll-view class="chart-scroll" scroll-x enable-flex>
+  <view class="chart-inner">
+    <view
+      wx:for="{{bars}}"
+      wx:key="label"
+      class="chart-col"
+      data-label="{{item.label}}"
+      data-value="{{item.value}}"
+      bindtap="onBarTap"
+     hover-class="tap-fade">
+      <text wx:if="{{item.value > 0}}" class="chart-value">{{item.display}}</text>
+      <view class="chart-bar {{item.value > 0 ? '' : 'is-zero'}}" style="height: {{item.h}}rpx;"></view>
+      <text class="chart-label">{{item.label}}</text>
+    </view>
+  </view>
+</scroll-view>

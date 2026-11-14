@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "牛马时钟 · 打卡记加班",
+  "usingComponents": {
+    "bottom-tabs": "../../components/bottom-tabs/bottom-tabs",
+    "clock-card": "../../components/clock-card/clock-card",
+    "day-list": "../../components/day-list/day-list",
+    "entry-form": "../../components/entry-form/entry-form",
+    "calendar-panel": "../../components/calendar-panel/calendar-panel",
+    "stats-panel": "../../components/stats-panel/stats-panel",
+    "niuma-panel": "../../components/niuma-panel/niuma-panel",
+    "data-panel": "../../components/data-panel/data-panel"
+  }
+}

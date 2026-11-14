@@ -1,0 +1,63 @@
+<view class="panel clock-card {{running ? 'is-running' : ''}}">
+  <view class="panel-head clock-head">
+    <view class="clock-title"><text>⏱ 今日打卡</text></view>
+    <view class="clock-extra">
+      <text class="muted">{{dateLabel}}</text>
+      <image class="clock-mascot" src="{{mascot}}" mode="aspectFill" />
+    </view>
+  </view>
+
+  <view class="panel-body clock-body">
+    <view class="clock-times">
+      <view class="clock-cell {{pop === 'in' ? 'punch-pop' : ''}}">
+        <text class="clock-cell-label">AM · 上班打卡</text>
+        <text class="clock-cell-value {{start === '--:--' ? 'is-empty' : ''}}">{{start}}</text>
+      </view>
+
+      <view class="clock-span {{ready ? 'has-value' : ''}} {{running ? 'is-live' : ''}} {{running && isOt ? 'is-ot' : ''}} {{running && !isOt ? 'is-normal' : ''}}">
+        <text class="clock-span-label">工作时长</text>
+        <text class="clock-span-value {{ready || running ? '' : 'is-empty'}}">{{durationText}}</text>
+        <view class="clock-span-line"></view>
+      </view>
+
+      <view class="clock-cell {{pop === 'out' ? 'punch-pop' : ''}}">
+        <text class="clock-cell-label">PM · 下班打卡</text>
+        <text class="clock-cell-value {{end === '--:--' ? 'is-empty' : ''}}">{{end}}</text>
+      </view>
+    </view>
+
+    <view wx:for="{{stamps}}" wx:key="id" class="punch-stamp is-{{item.kind}}">
+      <text class="punch-stamp-main">已打卡</text>
+      <text class="punch-stamp-sub">{{item.kind === 'in' ? '上班' : '下班'}} {{item.time}}</text>
+    </view>
+
+    <view class="btn btn-primary btn-block btn-3d clock-btn" bindtap="onAction" hover-class="clock-btn-hover">
+      <text>{{flash || (running ? '下班打卡' : '上班打卡')}}</text>
+      <view wx:for="{{ripples}}" wx:key="id" class="btn-ripple"></view>
+    </view>
+
+    <view wx:if="{{quote}}" class="cow-bubble" bindtap="closeQuote">{{quote}}</view>
+
+    <view wx:if="{{running && remindDue}}" class="remind-banner">
+      <text class="remind-banner-main">🔔 该下班打卡啦</text>
+      <text class="remind-banner-sub">别熬了，点下面的按钮收工</text>
+    </view>
+
+    <block wx:if="{{running}}">
+      <view class="clock-cancel" bindtap="onCancel">取消本次</view>
+      <view class="clock-taunt">{{taunt}}</view>
+      <view wx:if="{{!remindDue && remindHM}}" class="remind-hint">⏰ 将在 {{remindHM}} 提醒你下班打卡</view>
+    </block>
+
+    <view wx:if="{{pendingFill}}" class="fill-prompt">
+      <view class="fill-prompt-text">
+        <text class="fill-prompt-title">{{pendingText}}</text>
+        <text class="fill-prompt-sub">顺手补上这次加班的内容和备注？</text>
+      </view>
+      <view class="fill-prompt-actions">
+        <view class="btn btn-primary btn-sm" bindtap="goFill" hover-class="btn-hover">去填写</view>
+        <view class="fill-close" bindtap="closeFill" hover-class="tap-fade">✕</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,34 @@
+.desc-row { display: flex; justify-content: space-between; padding: 12rpx 0; border-bottom: 2rpx solid var(--line-2); font-size: 24rpx; }
+.desc-row:last-child { border-bottom: none; }
+.desc-label { color: var(--text-secondary); }
+.desc-value { color: var(--text-primary); }
+.data-note { display: block; font-size: 24rpx; line-height: 1.8; color: var(--text-secondary); margin-bottom: 20rpx; }
+.work-presets { display: flex; flex-wrap: wrap; margin-bottom: 20rpx; }
+.preset { font-size: 22rpx; margin-right: 12rpx; margin-bottom: 12rpx; }
+.work-form { display: flex; align-items: center; }
+.work-form picker { flex: 1; min-width: 0; }
+.shift-sep { padding: 0 12rpx; color: var(--text-tertiary); }
+.work-form .btn { flex: none; margin-left: 12rpx; }
+
+.about-banner {
+  position: relative;
+  width: 100%; height: 264rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+.about-img { width: 100%; height: 100%; display: block; }
+.about-mask {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(45, 55, 72, .42) 0%, rgba(45, 55, 72, .08) 62%, transparent 100%);
+}
+.about-sticky {
+  position: absolute; left: 28rpx; bottom: 32rpx;
+  background: #FFF4D9;
+  color: #7A4E28;
+  font-size: 24rpx; font-weight: 700;
+  padding: 14rpx 22rpx;
+  border-radius: 6rpx;
+  box-shadow: 0 6rpx 20rpx rgba(45, 55, 72, .22);
+  transform: rotate(-3deg);
+}

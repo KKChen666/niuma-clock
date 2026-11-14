@@ -1,0 +1,14 @@
+<view class="week-strip">
+  <view
+    wx:for="{{days}}"
+    wx:key="date"
+    class="ws-col {{item.isToday ? 'is-today' : ''}} {{item.isSelected ? 'is-selected' : ''}}"
+    data-date="{{item.date}}"
+    bindtap="onTap"
+   hover-class="tap-fade">
+    <view class="ws-track">
+      <view class="ws-bar" style="height: {{item.height}}%;"></view>
+    </view>
+    <text class="ws-label">{{item.label}}</text>
+  </view>
+</view>

@@ -1,0 +1,44 @@
+<view class="panel">
+  <view class="panel-head">
+    <text>牛马档案</text>
+    <text class="tag tag-amber">Lv.{{levelLevel}} · {{levelTitle}}</text>
+  </view>
+  <view class="panel-body">
+    <view class="wage-level">
+      <text class="wage-title">{{levelTitle}}</text>
+      <view class="wage-track"><view class="wage-fill" style="width: {{progress}}%;"></view></view>
+      <text class="wage-progress">{{progressText}}</text>
+      <text class="wage-total">累计加班 {{totalText}} · 牛马值按累计时长评定</text>
+    </view>
+
+    <view class="wage-money">
+      <view class="wage-row">
+        <text class="wage-label">月薪</text>
+        <input class="wage-input" type="digit" value="{{monthly}}" bindinput="onWage" bindblur="onWageBlur" placeholder="例如 12000" placeholder-class="picker-placeholder" />
+      </view>
+      <view class="wage-row">
+        <text class="wage-label">时薪（月薪 ÷ 21.75 ÷ 8）</text>
+        <text class="wage-num">{{rateText}}</text>
+      </view>
+      <view class="wage-row">
+        <text class="wage-label">本月加班收入</text>
+        <text class="wage-num">{{wageMonthText}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="panel">
+  <view class="panel-head"><text>牛马之最</text></view>
+  <view class="panel-body">
+    <view wx:if="{{wall.length === 0}}" class="wall-empty">还没有战绩，先去打个卡再回来吹 🐂</view>
+    <view wx:else class="wall-grid">
+      <view wx:for="{{wall}}" wx:key="key" class="wall-item {{item.lastCol ? 'is-last' : ''}}">
+        <view class="wall-item-label"><text class="wall-item-icon">{{item.icon}}</text>{{item.label}}</view>
+        <view class="wall-item-value">{{item.value}}</view>
+        <view wx:if="{{item.sub}}" class="wall-item-sub">{{item.sub}}</view>
+        <view class="wall-item-taunt">{{item.taunt}}</view>
+      </view>
+    </view>
+  </view>
+</view>

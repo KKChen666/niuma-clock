@@ -1,0 +1,95 @@
+<view class="entry-anchor">
+  <view class="entry-fold" bindtap="toggleOpen" hover-class="tap-fade">
+    <text>{{open ? '▾' : '＋'}}</text>
+    <text>{{editId ? '改一笔' : '补录一笔'}}</text>
+  </view>
+
+  <view wx:if="{{open}}" class="entry-body">
+    <view class="panel">
+      <view class="panel-head">
+        <text>{{editId ? '改一笔' : '补录一笔'}}</text>
+        <text wx:if="{{editId}}" class="muted" bindtap="onCancelEdit">取消编辑 ✕</text>
+      </view>
+      <view class="panel-body">
+        <text class="entry-hint">忘了打卡、要改时间？在这儿手动填，跟打卡记的是同一本账。</text>
+
+        <view class="form-item">
+          <text class="form-label">日期</text>
+          <picker mode="date" value="{{date}}" bindchange="onDate">
+            <view class="picker-value"><text>{{date}}</text><text class="picker-placeholder">▾</text></view>
+          </picker>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">怎么记</text>
+          <view class="segmented">
+            <view class="seg-item {{mode === 'range' ? 'is-active' : ''}}" data-mode="range" bindtap="switchMode" hover-class="tap-fade">起止时间</view>
+            <view class="seg-item {{mode === 'manual' ? 'is-active' : ''}}" data-mode="manual" bindtap="switchMode" hover-class="tap-fade">手动时长</view>
+          </view>
+        </view>
+
+        <view wx:if="{{mode === 'range'}}" class="form-item">
+          <text class="form-label">开始 - 结束</text>
+          <view class="time-row">
+            <picker mode="time" value="{{start}}" bindchange="onStart">
+              <view class="picker-value"><text class="{{rangeSet ? '' : 'picker-placeholder'}}">{{rangeSet ? start : '开始'}}</text></view>
+            </picker>
+            <text class="shift-sep">→</text>
+            <picker mode="time" value="{{end}}" bindchange="onEnd">
+              <view class="picker-value"><text class="{{rangeSet ? '' : 'picker-placeholder'}}">{{rangeSet ? end : '结束'}}</text></view>
+            </picker>
+          </view>
+        </view>
+
+        <view wx:else class="form-item">
+          <text class="form-label">加班时长（小时）</text>
+          <input class="input" type="digit" value="{{manual}}" bindinput="onManual" placeholder="直接填小时数" placeholder-class="picker-placeholder" />
+        </view>
+
+        <view class="chip-row">
+          <text class="chip-label">快捷</text>
+          <view
+            wx:for="{{chips}}"
+            wx:key="*this"
+            class="chip {{mode === 'manual' && manual == item ? 'is-active' : ''}}"
+            data-value="{{item}}"
+            bindtap="onChip"
+           hover-class="tap-fade">{{item}}h</view>
+        </view>
+
+        <view class="dur-preview {{preview > 0 ? 'has-value' : ''}}">
+          <text>本次 </text>
+          <text class="dur-strong">{{preview}}h</text>
+          <text class="dur-text"> · {{previewText}}</text>
+          <text wx:if="{{previewRange}}" class="dur-text"> · {{previewRange}}</text>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">工作内容</text>
+          <input class="input" value="{{content}}" bindinput="onContent" placeholder="今天又加了啥" placeholder-class="picker-placeholder" maxlength="120" />
+        </view>
+
+        <view wx:if="{{recent.length > 0}}" class="chip-row">
+          <text class="chip-label">常用</text>
+          <view
+            wx:for="{{recent}}"
+            wx:key="*this"
+            class="chip {{content === item ? 'is-active' : ''}}"
+            data-value="{{item}}"
+            bindtap="onRecent"
+           hover-class="tap-fade">{{item}}</view>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">备注</text>
+          <input class="input" value="{{note}}" bindinput="onNote" placeholder="选填，写点背景或交付物" placeholder-class="picker-placeholder" maxlength="200" />
+        </view>
+
+        <view class="entry-actions">
+          <view class="btn btn-primary btn-save" bindtap="onSave" hover-class="btn-hover">{{editId ? '更新' : '保存'}}</view>
+          <view class="btn" bindtap="clearForm" hover-class="btn-hover">清空</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
